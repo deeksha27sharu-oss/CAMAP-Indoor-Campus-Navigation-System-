@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>caMap | MLACW</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Poppins", sans-serif;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(135deg, #391118, #990e17);
+      color: white;
+      position: relative;
+      overflow: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: 
+        linear-gradient(rgba(57, 17, 24, 0.85), rgba(153, 14, 23, 0.8)),
+        url('{{ url_for("static", filename="Gemini_Generated_Image_1g7yse1g7yse1g7y.png") }}') no-repeat center center/cover;
+      opacity: 0.65;
+      z-index: -1;
+    }
+
+    .login-container {
+      background-color: rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      box-shadow: 0 4px 25px rgba(0, 0, 0, 0.4);
+      padding: 45px 35px;
+      width: 90%;
+      max-width: 380px;
+      text-align: center;
+      backdrop-filter: blur(10px);
+      z-index: 1;
+    }
+
+    .logo {
+      font-size: 1.9rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: #fff;
+      letter-spacing: 1px;
+    }
+
+    .subheading {
+      font-size: 2.1rem;
+      font-weight: 500;
+      color: #ffb3b3;
+      margin-bottom: 35px;
+    }
+
+    input[type="text"],
+    select {
+      width: 100%;
+      height: 48px;
+      padding: 10px 14px;
+      margin: 12px 0;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 8px;
+      font-size: 1rem;
+      color: #391118;
+      background-color: rgba(255, 255, 255, 0.9);
+      outline: none;
+      box-sizing: border-box;
+    }
+
+    input::placeholder {
+      color: #555;
+    }
+
+    button {
+      width: 100%;
+      height: 48px;
+      margin-top: 22px;
+      background-color: #990e17;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #c51c25;
+      transform: translateY(-2px);
+    }
+
+    footer {
+      margin-top: 25px;
+      font-size: 0.8rem;
+      color: #ddd;
+    }
+
+    .language-selector {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      z-index: 100;
+    }
+
+    .language-btn {
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .language-dropdown {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 8px;
+      margin-top: 5px;
+      min-width: 150px;
+      display: none;
+      backdrop-filter: blur(10px);
+    }
+
+    .language-dropdown.show {
+      display: block;
+    }
+
+    .language-option {
+      padding: 10px 15px;
+      cursor: pointer;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+      transition: background 0.2s;
+    }
+
+    .language-option:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .language-option:last-child {
+      border-bottom: none;
+    }
+
+    @media (max-width: 480px) {
+      .login-container {
+        padding: 35px 25px;
+      }
+      .language-selector {
+        position: relative;
+        top: auto;
+        right: auto;
+        margin-bottom: 15px;
+        align-self: flex-end;
+      }
+    }
+
+    .tour-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 9998;
+      display: none;
+    }
+
+    .tour-highlight {
+      position: absolute;
+      border: 3px solid #ffd700;
+      border-radius: 8px;
+      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7), 0 0 20px rgba(255, 215, 0, 0.5);
+      z-index: 9999;
+      transition: all 0.3s ease;
+    }
+
+    .tour-popup {
+      position: absolute;
+      background: white;
+      color: #333;
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      z-index: 10000;
+      max-width: 250px;
+      min-width: 200px;
+      max-height: 70vh;
+      overflow-y: auto;
+      font-family: "Poppins", sans-serif;
+    }
+
+    .tour-popup h3 {
+      margin: 0 0 10px 0;
+      color: #391118;
+      font-size: 1rem;
+      line-height: 1.2;
+    }
+
+    .tour-popup p {
+      margin: 0 0 12px 0;
+      line-height: 1.3;
+      font-size: 0.8rem;
+      max-height: 80px;
+      overflow-y: auto;
+      padding-right: 5px;
+    }
+
+    .tour-popup p::-webkit-scrollbar {
+      width: 3px;
+    }
+
+    .tour-popup p::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 2px;
+    }
+
+    .tour-popup p::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 2px;
+    }
+
+    .tour-popup p::-webkit-scrollbar-thumb:hover {
+      background: #a8a8a8;
+    }
+
+    .tour-popup-buttons {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .tour-popup-footer {
+      display: flex;
+      justify-content: center;
+      border-top: 1px solid #e0e0e0;
+      padding-top: 8px;
+    }
+
+    .tour-popup-btn {
+      padding: 5px 10px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.75rem;
+      transition: all 0.2s;
+      min-width: 60px;
+    }
+
+    .tour-popup-btn-primary {
+      background: #990e17;
+      color: white;
+    }
+
+    .tour-popup-btn-secondary {
+      background: #e0e0e0;
+      color: #333;
+    }
+
+    .tour-popup-btn-skip {
+      background: transparent;
+      color: #666;
+      border: none;
+      padding: 3px 6px;
+      cursor: pointer;
+      font-size: 0.7rem;
+      text-decoration: underline;
+    }
+
+    .tour-popup-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .tour-popup-btn-skip:hover {
+      color: #990e17;
+      background: transparent;
+      transform: none;
+    }
+
+    .tour-skip {
+      display: none;
+    }
+
+    .tour-progress {
+      position: absolute;
+      bottom: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: white;
+      font-size: 0.75rem;
+      z-index: 10001;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 3px 10px;
+      border-radius: 12px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Tour Elements -->
+  <div class="tour-overlay" id="tourOverlay"></div>
+  <div class="tour-highlight" id="tourHighlight"></div>
+  <div class="tour-popup" id="tourPopup">
+    <h3 id="tourTitle">Welcome to caMap!</h3>
+    <p id="tourDescription">Let's take a quick tour to help you get started with our campus navigation system.</p>
+    <div class="tour-popup-buttons">
+      <button class="tour-popup-btn tour-popup-btn-secondary" id="tourPrev">Previous</button>
+      <button class="tour-popup-btn tour-popup-btn-primary" id="tourNext">Next</button>
+    </div>
+    <div class="tour-popup-footer">
+      <button class="tour-popup-btn-skip" id="tourSkip">Skip Tour</button>
+    </div>
+  </div>
+  <div class="tour-progress" id="tourProgress">Step 1 of 5</div>
+
+  <!-- Language Selector -->
+  <div class="language-selector">
+    <div class="language-btn" id="languageBtn">
+      <span id="currentLanguage">🌐 English</span>
+      <span>▼</span>
+    </div>
+    <div class="language-dropdown" id="languageDropdown">
+      <div class="language-option" data-lang="en">🌐 English</div>
+      <div class="language-option" data-lang="hi">🌐 हिन्दी (Hindi)</div>
+      <div class="language-option" data-lang="kn">🌐 ಕನ್ನಡ (Kannada)</div>
+      <div class="language-option" data-lang="ta">🌐 தமிழ் (Tamil)</div>
+      <div class="language-option" data-lang="te">🌐 తెలుగు (Telugu)</div>
+    </div>
+  </div>
+
+  <div class="login-container">
+    <div class="logo">
+      <img src="{{ url_for('static', filename='mLACLogo.png') }}" alt="MLACW Logo" width="200">
+    </div>
+
+    <div class="subheading">caMap</div>
+
+    <form id="loginForm">
+      <input type="text" id="name" name="name" placeholder="Enter your name" data-i18n-placeholder="enter_name" required>
+
+      <select id="role" name="role" required>
+        <option value="" disabled selected data-i18n="select_role">Select your role</option>
+        <option value="mlacw_student" data-i18n="mlacw_student">MLACW Student</option>
+        <option value="mlacw_staff" data-i18n="mlacw_staff">MLACW Staff</option>
+        <option value="guest" data-i18n="guest">Guest</option>
+      </select>
+
+      <button type="submit" data-i18n="login">Login</button>
+    </form>
+
+    <footer data-i18n="footer">
+      Campus Navigation System | MLACW
+    </footer>
+  </div>
+
+  <script>
+    // Language support for login page
+    const loginTranslations = {
+      'en': {
+        'enter_name': 'Enter your name',
+        'select_role': 'Select your role',
+        'mlacw_student': 'MLACW Student',
+        'mlacw_staff': 'MLACW Staff',
+        'guest': 'Guest',
+        'login': 'Login',
+        'footer': 'Campus Navigation System | MLACW'
+      },
+      'hi': {
+        'enter_name': 'अपना नाम दर्ज करें',
+        'select_role': 'अपनी भूमिका चुनें',
+        'mlacw_student': 'एमएलएसीडब्ल्यू छात्र',
+        'mlacw_staff': 'एमएलएसीडब्ल्यू स्टाफ',
+        'guest': 'अतिथि',
+        'login': 'लॉगिन',
+        'footer': 'कैंपस नेविगेशन सिस्टम | एमएलएसीडब्ल्यू'
+      },
+      'kn': {
+        'enter_name': 'ನಿಮ್ಮ ಹೆಸರನ್ನು ನಮೂದಿಸಿ',
+        'select_role': 'ನಿಮ್ಮ ಪಾತ್ರವನ್ನು ಆಯ್ಕೆಮಾಡಿ',
+        'mlacw_student': 'ಎಂಎಲ್ಎಸಿಡಬ್ಲ್ಯೂ ವಿದ್ಯಾರ್ಥಿ',
+        'mlacw_staff': 'ಎಂಎಲ್ಎಸಿಡಬ್ಲ್ಯೂ ಸಿಬ್ಬಂದಿ',
+        'guest': 'ಅತಿಥಿ',
+        'login': 'ಲಾಗಿನ್',
+        'footer': 'ಕ್ಯಾಂಪಸ್ ನ್ಯಾವಿಗೇಶನ್ ಸಿಸ್ಟಮ್ | ಎಂಎಲ್ಎಸಿಡಬ್ಲ್ಯೂ'
+      },
+      'ta': {
+        'enter_name': 'உங்கள் பெயரை உள்ளிடவும்',
+        'select_role': 'உங்கள் பங்கைத் தேர்ந்தெடுக்கவும்',
+        'mlacw_student': 'எம்எல்ஏசிடபிள்யூ மாணவர்',
+        'mlacw_staff': 'எம்எல்ஏசிடபிள்யூ ஊழியர்',
+        'guest': 'விருந்தினர்',
+        'login': 'உள்நுழைய',
+        'footer': 'கேம்பஸ் நேவிகேஷன் சிஸ்டம் | எம்எல்ஏசிடபிள்யூ'
+      },
+      'te': {
+        'enter_name': 'మీ పేరు నమోదు చేయండి',
+        'select_role': 'మీ పాత్రను ఎంచుకోండి',
+        'mlacw_student': 'ఎమ్ఎల్ఏసిడబ్ల్యూ విద్యార్థి',
+        'mlacw_staff': 'ఎమ్ఎల్ఏసిడబ్ల్యూ సిబ్బంది',
+        'guest': 'అతిథి',
+        'login': 'లాగిన్',
+        'footer': 'క్యాంపస్ నావిగేషన్ సిస్టమ్ | ఎమ్ఎల్ఏసిడబ్ల్యూ'
+      }
+    };
+
+    let currentLanguage = 'en';
+
+    // Language functions
+    function setLanguage(lang) {
+      currentLanguage = lang;
+      document.getElementById('currentLanguage').textContent = `🌐 ${lang === 'en' ? 'English' : loginTranslations[lang].login}`;
+      applyLoginTranslations(lang);
+      saveLanguagePreference(lang);
+    }
+
+    function applyLoginTranslations(lang) {
+      const trans = loginTranslations[lang];
+      
+      // Update placeholder
+      document.querySelector('[data-i18n-placeholder]').placeholder = trans.enter_name;
+      
+      // Update select options
+      const roleSelect = document.getElementById('role');
+      roleSelect.options[0].textContent = trans.select_role;
+      roleSelect.options[1].textContent = trans.mlacw_student;
+      roleSelect.options[2].textContent = trans.mlacw_staff;
+      roleSelect.options[3].textContent = trans.guest;
+      
+      // Update button
+      document.querySelector('button[data-i18n]').textContent = trans.login;
+      
+      // Update footer
+      document.querySelector('footer[data-i18n]').textContent = trans.footer;
+    }
+
+    function saveLanguagePreference(lang) {
+      localStorage.setItem('preferredLanguage', lang);
+    }
+
+    function loadLanguagePreference() {
+      const savedLang = localStorage.getItem('preferredLanguage');
+      if (savedLang && loginTranslations[savedLang]) {
+        return savedLang;
+      }
+      return 'en';
+    }
+
+    // Tour functionality
+    let currentTourStep = 0;
+    let tourStarted = false;
+
+    const tourSteps = [
+      {
+        title: "Welcome to caMap!",
+        description: "Let's take a quick tour to help you get started with our campus navigation system.",
+        element: null,
+        position: "center"
+      },
+      {
+        title: "Enter Your Name",
+        description: "Start by entering your name here. This helps personalize your experience.",
+        element: "name",
+        position: "bottom"
+      },
+      {
+        title: "Select Your Role",
+        description: "Choose your role - student, staff, or guest - to get appropriate navigation features.",
+        element: "role",
+        position: "bottom"
+      },
+      {
+        title: "Language Selection",
+        description: "You can change the language anytime using this selector. We support multiple languages.",
+        element: "languageBtn",
+        position: "bottom" // Changed from "left" to "bottom" for step 4
+      },
+      {
+        title: "Ready to Explore!",
+        description: "Once logged in, you'll be able to navigate between any locations on campus using our smart routing system.",
+        element: "loginForm",
+        position: "top"
+      }
+    ];
+
+    function startTour() {
+      // Check if user has seen the tour before
+      const hasSeenTour = localStorage.getItem('hasSeenTour');
+      if (hasSeenTour) {
+        return; // Don't show tour if already seen
+      }
+
+      tourStarted = true;
+      currentTourStep = 0;
+      
+      // Show tour elements
+      document.getElementById('tourOverlay').style.display = 'block';
+      document.getElementById('tourPopup').style.display = 'block';
+      document.getElementById('tourProgress').style.display = 'block';
+      
+      showTourStep(currentTourStep);
+    }
+
+    function showTourStep(stepIndex) {
+      const step = tourSteps[stepIndex];
+      
+      // Update progress
+      document.getElementById('tourProgress').textContent = `Step ${stepIndex + 1} of ${tourSteps.length}`;
+      
+      // Update popup content
+      document.getElementById('tourTitle').textContent = step.title;
+      document.getElementById('tourDescription').textContent = step.description;
+      
+      // Update buttons
+      const prevBtn = document.getElementById('tourPrev');
+      const nextBtn = document.getElementById('tourNext');
+      
+      prevBtn.style.display = stepIndex === 0 ? 'none' : 'inline-block';
+      nextBtn.textContent = stepIndex === tourSteps.length - 1 ? 'Finish' : 'Next';
+      
+      // Position the popup and highlight
+      if (step.element && document.getElementById(step.element)) {
+        const element = document.getElementById(step.element);
+        const rect = element.getBoundingClientRect();
+        
+        // Show highlight
+        const highlight = document.getElementById('tourHighlight');
+        highlight.style.width = `${rect.width + 20}px`;
+        highlight.style.height = `${rect.height + 20}px`;
+        highlight.style.left = `${rect.left - 10}px`;
+        highlight.style.top = `${rect.top - 10}px`;
+        highlight.style.display = 'block';
+        
+        // Position popup with boundary checking
+        positionPopup(step.position, rect, stepIndex);
+      } else {
+        // Center popup for welcome step
+        document.getElementById('tourHighlight').style.display = 'none';
+        positionPopup('center');
+      }
+    }
+
+    function positionPopup(position, rect = null, stepIndex = 0) {
+      const popup = document.getElementById('tourPopup');
+      const padding = 10;
+      const viewportPadding = 15;
+      
+      // Reset transform first
+      popup.style.transform = '';
+      
+      if (position === 'center') {
+        popup.style.left = '50%';
+        popup.style.top = '50%';
+        popup.style.transform = 'translate(-50%, -50%)';
+      } else if (rect) {
+        let left, top;
+        
+        // Special handling for step 4 (language selector)
+        if (stepIndex === 3) { // Step 4 is index 3
+          // Position below the language selector with enough space
+          left = rect.left + rect.width/2;
+          top = rect.bottom + padding;
+          popup.style.transform = 'translateX(-50%)';
+        } else {
+          switch(position) {
+            case 'top':
+              left = rect.left + rect.width/2;
+              top = rect.top - popup.offsetHeight - padding;
+              popup.style.transform = 'translateX(-50%)';
+              break;
+            case 'bottom':
+              left = rect.left + rect.width/2;
+              top = rect.bottom + padding;
+              popup.style.transform = 'translateX(-50%)';
+              break;
+            case 'left':
+              left = rect.left - popup.offsetWidth - padding;
+              top = rect.top + rect.height/2;
+              popup.style.transform = 'translateY(-50%)';
+              break;
+            case 'right':
+              left = rect.right + padding;
+              top = rect.top + rect.height/2;
+              popup.style.transform = 'translateY(-50%)';
+              break;
+          }
+        }
+        
+        // Boundary checking to keep popup within viewport
+        const popupWidth = popup.offsetWidth;
+        const popupHeight = popup.offsetHeight;
+        
+        // Check left boundary
+        if (left < viewportPadding) {
+          left = viewportPadding;
+        }
+        
+        // Check right boundary
+        if (left + popupWidth > window.innerWidth - viewportPadding) {
+          left = window.innerWidth - popupWidth - viewportPadding;
+        }
+        
+        // Check top boundary
+        if (top < viewportPadding) {
+          top = viewportPadding;
+        }
+        
+        // Check bottom boundary
+        if (top + popupHeight > window.innerHeight - viewportPadding) {
+          top = window.innerHeight - popupHeight - viewportPadding;
+        }
+        
+        popup.style.left = `${left}px`;
+        popup.style.top = `${top}px`;
+      }
+    }
+
+    function nextTourStep() {
+      if (currentTourStep < tourSteps.length - 1) {
+        currentTourStep++;
+        showTourStep(currentTourStep);
+      } else {
+        finishTour();
+      }
+    }
+
+    function prevTourStep() {
+      if (currentTourStep > 0) {
+        currentTourStep--;
+        showTourStep(currentTourStep);
+      }
+    }
+
+    function finishTour() {
+      // Mark tour as completed
+      localStorage.setItem('hasSeenTour', 'true');
+      
+      // Hide all tour elements
+      document.getElementById('tourOverlay').style.display = 'none';
+      document.getElementById('tourHighlight').style.display = 'none';
+      document.getElementById('tourPopup').style.display = 'none';
+      document.getElementById('tourProgress').style.display = 'none';
+      
+      tourStarted = false;
+    }
+
+    // Initialize language when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      const savedLang = loadLanguagePreference();
+      setLanguage(savedLang);
+
+      // Language selector functionality
+      const languageBtn = document.getElementById('languageBtn');
+      const languageDropdown = document.getElementById('languageDropdown');
+      
+      languageBtn.addEventListener('click', () => {
+        languageDropdown.classList.toggle('show');
+      });
+
+      // Close language dropdown when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!languageBtn.contains(e.target) && !languageDropdown.contains(e.target)) {
+          languageDropdown.classList.remove('show');
+        }
+      });
+
+      // Language option selection
+      document.querySelectorAll('.language-option').forEach(option => {
+        option.addEventListener('click', () => {
+          const lang = option.getAttribute('data-lang');
+          setLanguage(lang);
+          languageDropdown.classList.remove('show');
+        });
+      });
+
+      // Tour event listeners
+      document.getElementById('tourNext').addEventListener('click', nextTourStep);
+      document.getElementById('tourPrev').addEventListener('click', prevTourStep);
+      document.getElementById('tourSkip').addEventListener('click', finishTour);
+
+      // Start tour after a short delay
+      setTimeout(startTour, 1000);
+    });
+
+    document.getElementById("loginForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const name = document.getElementById("name").value.trim();
+      const role = document.getElementById("role").value;
+      
+      if (name && role) {
+        // Send login data to server
+        fetch('/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: `name=${encodeURIComponent(name)}&role=${encodeURIComponent(role)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // Store user info in localStorage to track returning users
+            localStorage.setItem('userName', name);
+            localStorage.setItem('userRole', role);
+            localStorage.setItem('userLoggedIn', 'true');
+            
+            // Redirect to front1 page
+            window.location.href = data.redirect;
+          } else {
+            alert(data.error || "Login failed. Please try again.");
+          }
+        })
+        .catch(error => {
+          console.error('Login error:', error);
+          alert("Login failed. Please try again.");
+        });
+      } else {
+        alert("Please enter your name and select your role.");
+      }
+    });
+  </script>
+</body>
+</html>

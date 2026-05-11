@@ -1,0 +1,2647 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>caMap | Multi-Floor College Navigator</title>
+  <style>
+    :root {
+      --bg: #391118;
+      --card: rgba(255, 255, 255, 0.1);
+      --text-light: #ffffff;
+      --muted: #ffb3b3;
+      --accent: #990e17;
+      --accent-hover: #c51c25;
+      --border: rgba(255, 255, 255, 0.2);
+      --success: #4ecf92;
+      --danger: #ff6b6b;
+      font-family: "Poppins", sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: linear-gradient(135deg, var(--bg), var(--accent));
+      color: var(--text-light);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 20px;
+    }
+    
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: 
+        linear-gradient(rgba(57, 17, 24, 0.85), rgba(153, 14, 23, 0.8)),
+        url("{{ url_for('static', filename='Gemini_Generated_Image_1g7yse1g7yse1g7y.png') }}") no-repeat center center/cover;
+      opacity: 0.65;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .container {
+      max-width: 1200px;
+      width: 90%;
+      background-color: rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      padding: 20px;
+    }
+
+    header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .logo-img {
+      height: 70px;
+      width: auto;
+      margin-bottom: 10px;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 1.8rem;
+      text-align: center;
+      color: #fff;
+    }
+    header p {
+      margin: 6px 0 18px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .badges {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .badge {
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      border: 1px solid var(--border);
+    }
+
+    .card {
+      background-color: rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 16px;
+      border: 1px solid var(--border);
+      margin-bottom: 18px;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .field {
+      flex: 1 1 220px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    label {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    
+    select, button, input[type="text"].searchable-input, .filter-input {
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.9);
+      font-size: 14px;
+      color: #391118;
+      outline: none;
+    }
+    select:focus, button:focus, input[type="text"].searchable-input:focus, .filter-input:focus {
+      box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.1);
+    }
+    .filter-input {
+        width: 100%;
+        margin-bottom: 15px; 
+    }
+    .filter-input::placeholder {
+        color: #555;
+    }
+
+    .btn-primary {
+      background-color: var(--accent);
+      color: white;
+      border: none;
+      min-width: 140px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+    .btn-primary:hover {
+      background-color: var(--accent-hover);
+      transform: translateY(-2px);
+    }
+    
+    .btn-scroll {
+        background: rgba(255, 255, 255, 0.15);
+        color: white;
+        border: 1px solid var(--border);
+        cursor: pointer;
+        font-weight: 500;
+        padding: 8px 12px;
+        border-radius: 8px;
+        font-size: 13px;
+    }
+    .btn-scroll:hover {
+        background: rgba(255, 255, 255, 0.25);
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      padding: 6px;
+      align-items: center;
+    }
+    .tab {
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+    }
+    .tab.active {
+      background: rgba(255, 255, 255, 0.9);
+      color: var(--accent);
+      border: 1px solid var(--border);
+      font-weight: 600;
+    }
+
+    .map-card {
+      border: 2px dashed rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      padding: 10px;
+      min-height: 320px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.05);
+    }
+    
+    .map-card img {
+        display: block;
+        width: 100%;
+        height: auto;
+        max-height: 340px;
+        object-fit: contain;
+        border-radius: 6px;
+    }
+
+    svg { width: 100%; height: 100%; max-height: 340px; }
+    .node { cursor: pointer; transition: transform .12s; }
+    .node:hover { transform: scale(1.12); }
+    .edge { stroke: rgba(255, 255, 255, 0.2); stroke-width: 3; stroke-linecap: round; }
+    .edge.highlight { stroke: #ffd166; stroke-width: 5; opacity: 1; }
+    .node .dot { r: 9; fill: #ffffff; }
+    .node.start .dot { fill: var(--danger); }
+    .node.end .dot { fill: var(--success); }
+
+    .node-label { font-size: 11px; text-anchor: middle; fill: #fff; pointer-events: none; }
+
+    .room-description-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid var(--border);
+    }
+    .room-description-header h3 {
+        margin: 0;
+        font-size: 1rem;
+        color: var(--muted);
+    }
+    .room-description-scroll-wrapper {
+        display: flex;
+        gap: 20px;
+        overflow-x: scroll;
+        padding: 10px 0 10px;
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+    .room-description-scroll-wrapper::-webkit-scrollbar {
+        display: none;
+    }
+
+    .room-description {
+        flex-shrink: 0;
+        width: 90vw;
+        max-width: 400px;
+        background-color: rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        padding: 20px;
+        transition: opacity 0.3s ease;
+    }
+    .room-description.hidden { 
+        display: none;
+    }
+
+    .room-description .room-image {
+        width: 100%;
+        height: 150px;
+        background: rgba(255, 255, 255, 0.1); 
+        border-radius: 8px;
+        margin-bottom: 15px;
+        overflow: hidden;
+    }
+    .room-description .room-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .room-description h2 {
+        margin-top: 0;
+        margin-bottom: 5px;
+        font-size: 1.4rem;
+        color: var(--text-light);
+    }
+    .room-description .room-meta {
+        font-size: 0.9rem;
+        color: var(--muted);
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .room-description .room-meta .icon {
+        background: rgba(255, 255, 255, 0.15);
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-weight: 600;
+    }
+    .room-description p {
+        font-size: 0.9rem;
+        line-height: 1.6;
+        color: var(--text-light);
+        margin-bottom: 0;
+    }
+    .room-description hr {
+        border: none;
+        border-top: 1px solid var(--border);
+        margin: 15px 0;
+    }
+
+    .nav-menu {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      z-index: 100;
+    }
+
+    .nav-btn {
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-dropdown {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-top: 5px;
+      min-width: 180px;
+      display: none;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+    }
+
+    .nav-dropdown.show {
+      display: block;
+    }
+
+    .nav-option {
+      padding: 12px 15px;
+      cursor: pointer;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .nav-option:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .nav-option:last-child {
+      border-bottom: none;
+    }
+
+    .nav-icon {
+      font-size: 16px;
+    }
+
+    .chatbot-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      background: var(--accent);
+      border: none;
+      border-radius: 50%;
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      transition: all 0.3s ease;
+      z-index: 1000;
+    }
+
+    .chatbot-btn:hover {
+      background: var(--accent-hover);
+      transform: scale(1.1);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    }
+
+    .chatbot-container {
+      position: fixed;
+      bottom: 90px;
+      right: 20px;
+      width: 350px;
+      height: 500px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      display: none;
+      flex-direction: column;
+      z-index: 999;
+      overflow: hidden;
+    }
+
+    .chatbot-container.active {
+      display: flex;
+    }
+
+    .chatbot-header {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 15px 20px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(10px);
+    }
+
+    .chatbot-header h3 {
+      font-size: 1.1rem;
+      margin-bottom: 5px;
+      color: white;
+    }
+
+    .chatbot-header p {
+      font-size: 0.8rem;
+      opacity: 0.8;
+      margin: 0;
+    }
+
+    .chatbot-close {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      background: none;
+      border: none;
+      color: white;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 5px;
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .message {
+      max-width: 85%;
+      padding: 10px 14px;
+      border-radius: 18px;
+      line-height: 1.4;
+      font-size: 0.9rem;
+      animation: fadeIn 0.3s ease-in;
+    }
+
+    .bot-message {
+      background: rgba(255, 255, 255, 0.15);
+      align-self: flex-start;
+      border-bottom-left-radius: 5px;
+    }
+
+    .user-message {
+      background: rgba(153, 14, 23, 0.8);
+      align-self: flex-end;
+      border-bottom-right-radius: 5px;
+    }
+
+    .chat-input-container {
+      padding: 12px 15px;
+      background: rgba(255, 255, 255, 0.1);
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+      backdrop-filter: blur(10px);
+    }
+
+    .chat-input {
+      flex: 1;
+      padding: 10px 12px;
+      border: none;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.9);
+      color: #391118;
+      font-size: 13px;
+      outline: none;
+    }
+
+    .chat-send-btn {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 20px;
+      background: var(--accent);
+      color: white;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+      transition: background 0.3s ease;
+    }
+
+    .chat-send-btn:hover {
+      background: var(--accent-hover);
+    }
+
+    .quick-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 10px 15px;
+      background: rgba(255, 255, 255, 0.05);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .quick-action-btn {
+      padding: 6px 10px;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      cursor: pointer;
+      font-size: 11px;
+      transition: all 0.3s ease;
+    }
+
+    .quick-action-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-1px);
+    }
+
+    .typing-indicator {
+      display: none;
+      align-self: flex-start;
+      background: rgba(255, 255, 255, 0.15);
+      padding: 10px 14px;
+      border-radius: 18px;
+      border-bottom-left-radius: 5px;
+    }
+
+    .typing-dots {
+      display: flex;
+      gap: 4px;
+    }
+
+    .typing-dot {
+      width: 6px;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.6);
+      border-radius: 50%;
+      animation: typing 1.4s infinite ease-in-out;
+    }
+
+    .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+    .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+    .suggestion-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .suggestion-chip {
+      padding: 4px 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 12px;
+      font-size: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .suggestion-chip:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    @keyframes typing {
+      0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* NEW: Voice Command Button Styles */
+    .voice-btn {
+      position: fixed;
+      bottom: 90px;
+      left: 20px;
+      width: 60px;
+      height: 60px;
+      background: var(--accent);
+      border: none;
+      border-radius: 50%;
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      transition: all 0.3s ease;
+      z-index: 1000;
+    }
+
+    .voice-btn:hover {
+      background: var(--accent-hover);
+      transform: scale(1.1);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    }
+
+    .voice-btn.listening {
+      background: var(--danger);
+      animation: pulse 1.5s infinite;
+    }
+
+    .voice-popup {
+      position: fixed;
+      bottom: 160px;
+      left: 20px;
+      width: 300px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      display: none;
+      z-index: 999;
+    }
+
+    .voice-popup.active {
+      display: block;
+    }
+
+    .voice-popup-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .voice-popup-header h3 {
+      margin: 0;
+      font-size: 1.1rem;
+      color: white;
+    }
+
+    .voice-popup-close {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 5px;
+    }
+
+    .voice-status {
+      text-align: center;
+      margin-bottom: 15px;
+      min-height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .voice-transcript {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 15px;
+      min-height: 60px;
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+
+    .voice-commands {
+      margin-top: 15px;
+    }
+
+    .voice-commands h4 {
+      margin: 0 0 10px 0;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .command-examples {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .command-example {
+      padding: 6px 10px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .command-example:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+
+    /* Tour Styles */
+    .tour-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 9998;
+      display: none;
+    }
+
+    .tour-highlight {
+      position: absolute;
+      border: 3px solid #ffd700;
+      border-radius: 8px;
+      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7), 0 0 20px rgba(255, 215, 0, 0.5);
+      z-index: 9999;
+      transition: all 0.3s ease;
+    }
+
+    .tour-popup {
+      position: absolute;
+      background: white;
+      color: #333;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      z-index: 10000;
+      max-width: 300px;
+      min-width: 250px;
+      font-family: "Poppins", sans-serif;
+    }
+
+    .tour-popup h3 {
+      margin: 0 0 10px 0;
+      color: #391118;
+      font-size: 1.2rem;
+    }
+
+    .tour-popup p {
+      margin: 0 0 15px 0;
+      line-height: 1.5;
+      font-size: 0.9rem;
+    }
+
+    .tour-popup-buttons {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .tour-popup-btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .tour-popup-btn-primary {
+      background: #990e17;
+      color: white;
+    }
+
+    .tour-popup-btn-secondary {
+      background: #e0e0e0;
+      color: #333;
+    }
+
+    .tour-popup-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .tour-popup-footer {
+      display: flex;
+      justify-content: center;
+      border-top: 1px solid #e0e0e0;
+      padding-top: 8px;
+    }
+
+    .tour-popup-btn-skip {
+      background: transparent;
+      color: #666;
+      border: none;
+      padding: 3px 6px;
+      cursor: pointer;
+      font-size: 0.7rem;
+      text-decoration: underline;
+    }
+
+    .tour-popup-btn-skip:hover {
+      color: #990e17;
+      background: transparent;
+      transform: none;
+    }
+
+    .tour-progress {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: white;
+      font-size: 0.9rem;
+      z-index: 10001;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 5px 15px;
+      border-radius: 20px;
+    }
+
+    @media (max-width: 720px) {
+      .form-row { flex-direction: column; }
+      .container { margin: 12px; }
+      .nav-menu {
+        position: relative;
+        top: auto;
+        right: auto;
+        margin-bottom: 15px;
+        align-self: flex-end;
+      }
+      .chatbot-btn {
+        bottom: 15px;
+        right: 15px;
+        width: 50px;
+        height: 50px;
+        font-size: 20px;
+      }
+      .chatbot-container {
+        width: 320px;
+        height: 450px;
+        right: 15px;
+        bottom: 80px;
+      }
+      .voice-btn {
+        bottom: 85px;
+        left: 15px;
+        width: 50px;
+        height: 50px;
+        font-size: 20px;
+      }
+      .voice-popup {
+        width: 280px;
+        left: 15px;
+        bottom: 150px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Tour Elements -->
+  <div class="tour-overlay" id="tourOverlay"></div>
+  <div class="tour-highlight" id="tourHighlight"></div>
+  <div class="tour-popup" id="tourPopup">
+    <h3 id="tourTitle">Welcome to caMap Navigation!</h3>
+    <p id="tourDescription">Let's explore how to use the campus navigation system.</p>
+    <div class="tour-popup-buttons">
+      <button class="tour-popup-btn tour-popup-btn-secondary" id="tourPrev">Previous</button>
+      <button class="tour-popup-btn tour-popup-btn-primary" id="tourNext">Next</button>
+    </div>
+    <div class="tour-popup-footer">
+      <button class="tour-popup-btn-skip" id="tourSkip">Skip Tour</button>
+    </div>
+  </div>
+  <div class="tour-progress" id="tourProgress">Step 1 of 5</div>
+
+  <!-- NEW: Voice Command Elements -->
+  <div class="voice-popup" id="voicePopup">
+    <div class="voice-popup-header">
+      <h3>🎤 Voice Navigation</h3>
+      <button class="voice-popup-close" id="voicePopupClose">×</button>
+    </div>
+    <div class="voice-status" id="voiceStatus">
+      Click the microphone and speak your destination
+    </div>
+    <div class="voice-transcript" id="voiceTranscript">
+      Your speech will appear here...
+    </div>
+    <div class="voice-commands">
+      <h4>Try saying:</h4>
+      <div class="command-examples">
+        <div class="command-example" onclick="setVoiceExample('Navigate me to library')">"Navigate me to library"</div>
+        <div class="command-example" onclick="setVoiceExample('How to go to canteen')">"How to go to canteen"</div>
+        <div class="command-example" onclick="setVoiceExample('Find route to chemistry lab')">"Find route to chemistry lab"</div>
+        <div class="command-example" onclick="setVoiceExample('Directions to principal office')">"Directions to principal office"</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Voice Command Button -->
+  <button class="voice-btn" id="voiceBtn" title="Voice Navigation">
+    🎤
+  </button>
+
+  <!-- NEW: Embedded Chatbot Container -->
+  <div class="chatbot-container" id="chatbotContainer">
+    <div class="chatbot-header">
+      <button class="chatbot-close" id="chatbotClose">×</button>
+      <h3>🏫 Campus Assistant</h3>
+      <p>Ask me anything about MLACW campus!</p>
+    </div>
+    
+    <div class="quick-actions">
+      <button class="quick-action-btn" onclick="sendQuickMessage('Where is the library?')">📍 Library</button>
+      <button class="quick-action-btn" onclick="sendQuickMessage('How to find a classroom?')">🏫 Classrooms</button>
+      <button class="quick-action-btn" onclick="sendQuickMessage('Where are the labs located?')">🔬 Laboratories</button>
+      <button class="quick-action-btn" onclick="sendQuickMessage('Canteen location?')">🍽️ Canteen</button>
+      <button class="quick-action-btn" onclick="sendQuickMessage('Staff rooms?')">👨‍🏫 Staff Rooms</button>
+      <button class="quick-action-btn" onclick="sendQuickMessage('Navigation help')">🗺️ Navigation</button>
+    </div>
+
+    <div class="chat-messages" id="chatMessages">
+      <div class="message bot-message">
+        Hello! I'm your Campus Assistant. I can help you with:
+        <div class="suggestion-chips">
+          <div class="suggestion-chip" onclick="sendQuickMessage('Room locations')">📍 Room locations</div>
+          <div class="suggestion-chip" onclick="sendQuickMessage('Navigation between floors')">🏢 Floor navigation</div>
+          <div class="suggestion-chip" onclick="sendQuickMessage('Department information')">📚 Departments</div>
+          <div class="suggestion-chip" onclick="sendQuickMessage('Campus facilities')">🏛️ Campus facilities</div>
+        </div>
+        What would you like to know about MLACW campus?
+      </div>
+      
+      <div class="typing-indicator" id="typingIndicator">
+        <div class="typing-dots">
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-input-container">
+      <input type="text" class="chat-input" id="chatInput" placeholder="Type your question..." onkeypress="handleChatKeyPress(event)">
+      <button class="chat-send-btn" onclick="sendChatMessage()">Send</button>
+    </div>
+  </div>
+
+  <!-- Chatbot Button -->
+  <button class="chatbot-btn" id="chatbotBtn" title="Campus Assistant">
+    💬
+  </button>
+
+  <div class="container" role="main">
+    <!-- UPDATED: Navigation Menu with Language Selector -->
+    <div class="nav-menu">
+      <div class="nav-btn" id="navBtn">
+        <span>☰</span>
+      </div>
+      <div class="nav-dropdown" id="navDropdown">
+        <div class="nav-option" id="profileBtn">
+          <span class="nav-icon">👤</span>
+          <span data-i18n="profile">Profile</span>
+        </div>
+        <div class="nav-option" id="dashboardBtn">
+          <span class="nav-icon">📊</span>
+          <span data-i18n="dashboard">Dashboard</span>
+        </div>
+        <!-- Language Selector integrated into nav menu -->
+        <div class="nav-option" id="languageBtn">
+          <span class="nav-icon">🌐</span>
+          <span id="currentLanguage">English</span>
+        </div>
+        <div class="language-dropdown" id="languageDropdown">
+          <div class="nav-option" data-lang="en">🌐 English</div>
+          <div class="nav-option" data-lang="hi">🌐 हिन्दी (Hindi)</div>
+          <div class="nav-option" data-lang="kn">🌐 ಕನ್ನಡ (Kannada)</div>
+          <div class="nav-option" data-lang="ta">🌐 தமிழ் (Tamil)</div>
+          <div class="nav-option" data-lang="te">🌐 తెలుగు (Telugu)</div>
+        </div>
+      </div>
+    </div>
+
+    <header>
+      <img src="{{ url_for('static', filename='mLACLogo.png') }}" alt="MLAC Logo" class="logo-img">
+      <h1 data-i18n="app_title">CAMAP-Campus Navigation</h1>
+      <p data-i18n="app_description">Navigate between any two locations across the college using Dijkstra's algorithm.</p>
+      <div class="badges">
+        <div class="badge" data-i18n="total_rooms">53 Total Rooms</div>
+        <div class="badge" data-i18n="floors_connected">4 Floors Connected</div>
+        <div class="badge" data-i18n="vertical_connections">4 Vertical Connections</div>
+      </div>
+    </header>
+
+    <section class="card" aria-labelledby="route-heading">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <strong id="route-heading" style="font-size:14px;color:var(--muted)" data-i18n="plan_route">Plan Your Multi-Floor Route</strong>
+      </div>
+      
+      <form id="routeForm" class="form-row" style="margin-top:12px">
+        
+        <div class="field">
+          <label for="startInput" data-i18n="start_room">Start Room</label>
+          <input type="text" id="startInput" name="startInput" class="searchable-input" list="startRoomList" placeholder="Type or select starting room" data-i18n-placeholder="start_placeholder" required>
+          <datalist id="startRoomList"></datalist>
+        </div>
+
+        <div class="field">
+          <label for="endInput" data-i18n="destination_room">Destination Room</label>
+          <input type="text" id="endInput" name="endInput" class="searchable-input" list="endRoomList" placeholder="Type or select destination room" data-i18n-placeholder="end_placeholder" required>
+          <datalist id="endRoomList"></datalist>
+        </div>
+
+        <div class="field" style="flex: 0 0 100px;">
+          <label style="opacity:0" data-i18n="find_route_button">Find Route Button</label>
+          <button type="submit" class="btn-primary" id="findRouteBtn" data-i18n="find_route">Find Route →</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card">
+        <div class="tabs">
+            <div class="tab active" data-floor="ground" data-i18n="ground_floor">Ground Floor</div>
+            <div class="tab" data-floor="first" data-i18n="first_floor">First Floor</div>
+            <div class="tab" data-floor="second" data-i18n="second_floor">Second Floor</div>
+            <div class="tab" data-floor="third" data-i18n="third_floor">Third Floor</div>
+        </div>
+
+        <div class="map-card">
+            <img id="groundFloorStaticMap" src="{{ url_for('static', filename='mlacw.jpg') }}" alt="Ground Floor Map">
+        </div>
+    </section>
+
+    <!-- Hidden select elements for room data -->
+    <select id="originalStartSelect" style="display:none;">
+        <option value="" data-i18n="select_start_room">Select starting room</option>
+        <optgroup label="Ground Floor" data-i18n-label="ground_floor">
+            <option value="Golden jubliee">Golden Jubilee Hall</option>
+            <option value="G1">G1 Class</option>
+            <option value="G2">G2 Class</option>
+            <option value="G3">G3 Class</option>
+            <option value="G4">G4 Class</option>
+            <option value="G5">G5 Class</option>
+            <option value="G6">G6 Class</option>
+            <option value="G7">G7 Class</option>
+            <option value="G8">G8 Class</option>
+            <option value="Department of Physical Education">Dept. of Physical Education (Gym)</option>
+            <option value="Ladies Toilet1">Ladies Toilet</option>
+            <option value="Canteen">Canteen</option>
+            <option value="Stairs_G3">Stair 3 G-F</option>
+            <option value="Bun World">Bun World</option>
+            <option value="Stock Room">Stock Room</option>
+            <option value="Health Center">Health Center</option>
+            <option value="Transformer">Transformer Room</option>
+            <option value="Garden">Garden Area</option>
+            <option value="Examination Room">Examination Room</option>
+            <option value="Deptartment of Psychology">Dept. of Psychology</option>
+            <option value="G9">G9 Class</option>
+            <option value="G10">G10 Class</option>
+            <option value="G11">G11 Class</option>
+            <option value="Department of Language">Dept. of Language</option>
+            <option value="Mens Toilet">Mens Toilet</option>
+            <option value="Fee Counter">Fee Counter</option>
+            <option value="Library">Library (Ground Floor)</option>
+            <option value="Reception">Reception</option>
+            <option value="PUC Principal Room">PUC Principal Room</option>
+            <option value="Stair_G1">Stair 1 G-F</option>
+            <option value="Muesum">Muesum</option>
+            <option value="Reprography">Reprography</option>
+            <option value="Stair_G2">Stair 2 G-F</option>
+            <option value="Stage">Stage</option>
+            <option value="Server Room">Server Room</option>
+            <option value="Finance Officer Room">Finance Officer Room (FO)</option>
+            <option value="Office Room">Office Room</option>
+            <option value="Degree PrincipalRoom">Degree Principal Room</option>
+            <option value="Lift_G">Lift1 (Elevator)</option>
+        </optgroup>
+        <optgroup label="First Floor" data-i18n-label="first_floor">
+                <option value="Stairs_F3">Stair 3 F-S</option>
+                <option value="Stairs_F1">Stair 1 F-S</option>
+                <option value="Stairs_F2">Stair 2 F-S</option>
+                <option value="BioTech Lab">BioTech Lab</option>
+                <option value="Zoology Lab1">Zoology Lab1</option>
+                <option value="Staff Room1">Staff Room1</option>
+                <option value="PGBioChem Lab">PG BioChemistry Lab</option>
+                <option value="MicroBio Lab">MicroBiology Laboratory</option>
+                <option value="Botany Lab1">Botany Lab1</option>
+                <option value="Botany Lab2">Botany Lab2</option>
+                <option value="F1">F1 Class</option>
+                <option value="F2">F2 Class</option>
+                <option value="F3">F3 Class</option>
+                <option value="F4">F4 Class</option>
+                <option value="F5">F5 Class</option>
+                <option value="Chem Lab3">Chemistry Lab3</option>
+                <option value="Chem Lab1">Chemistry Lab1</option>
+                <option value="Chem Lab2">Chemistry Lab2</option>
+                <option value="Department of Chemistry">Department of Chemistry</option>
+                <option value="Ladies Toilet2">Ladies Toilet2</option>
+                <option value="Physics Lab1">Physics Lab1</option>
+                <option value="Physics Lab2">Physics Lab2</option>
+                <option value="Physics Lab3">Physics Lab3</option>
+                <option value="Dept jornalisim">Department of Journalism</option>
+                <option value="Animal Room">Animal Room</option>
+                <option value="Dept Botany">Dept. Botany</option>
+                <option value="Lift_F">Lift2 (Elevator)</option>
+            </optgroup>
+        <optgroup label="Second Floor" data-i18n-label="second_floor">
+            <option value="Stairs_S3">Stair 3 S-T</option>
+            <option value="Stairs_S1">Stair 1 S-T</option>
+            <option value="Stairs_S2">Stair 2 S-T</option>
+            <option value="Stairs_S4">Stair 4 S-T</option>
+            <option value="Zoology Lab2">Zoology Lab2</option>
+            <option value="S1">S1 Class</option>
+            <option value="S2">S2 Lab</option>
+            <option value="S3">S3 Class</option>
+            <option value="S4">S4 Lab</option>
+            <option value="S5">S5 Class</option>
+            <option value="S6">S6 Lab</option>
+            <option value="S7">S7 Class</option>
+            <option value="S8">S8 Lab</option>
+            <option value="Common Room">Common Room</option>
+            <option value="Ladies Toilet3">Ladies Toilet3</option>
+            <option value="Dept of commerce office">Department of commerce Office</option>
+            <option value="HOD Room">HOD Room</option>
+            <option value="Office">Office</option>
+            <option value="Conference Room">Conference Room</option>
+            <option value="Seminar Hall2">Seminar Hall2</option>
+            <option value="HOD Room 2">HOD Room 2</option>
+            <option value="Dept of Management Studies">Department of Management Studies</option>
+            <option value="NCC AirWing Room">NCC AirWing Room</option>
+            <option value="S9">S9</option>
+            <option value="S10">S10 Class</option>
+            <option value="S11">S11 Lab</option>
+            <option value="S12">S12 Class</option>
+            <option value="Step1">Step1</option>
+            <option value="Londge">Londge</option>
+            <option value="Lift_S">Lift3 (Elevator)</option>
+        </optgroup>
+        <optgroup label="Third Floor" data-i18n-label="third_floor">
+            <option value="Stairs_T3">Stair 3 T-R</option>
+            <option value="Stairs_T2">Stair 2 T-R</option>
+            <option value="Stairs_T4">Stair 4 T-R</option>
+            <option value="Animal Cell Culture">Animal Cell Culture</option>
+            <option value="Life Science Research Center">Life Science Research Center</option>
+            <option value="T1">T1 Class</option>
+            <option value="T2">T2 Class</option>
+            <option value="T3">T3 Class</option>
+            <option value="Kannada Research Center">Kannada Research Center</option>
+            <option value="NCC Army Stock Room">NCC Army Stock Room</option>
+            <option value="T4">T4</option>
+            <option value="T5">T5</option>
+            <option value="T6">T6</option>
+            <option value="T7">T7</option>
+            <option value="DBT Room">DBT Room</option>
+            <option value="Commerce Research Center">Commerce Research Center</option>
+            <option value="Dept of commerce">Dept of commerce</option>
+            <option value="Business Lab">Business Lab</option>
+            <option value="T8">T8</option>
+            <option value="Lift_T">Lift4 (Elevator)</option>
+        </optgroup>
+</select>
+
+<select id="originalEndSelect" style="display:none;">
+        <option value="" data-i18n="select_destination_room">Select destination room</option>
+        <optgroup label="Ground Floor" data-i18n-label="ground_floor">
+            <option value="Golden jubliee">Golden Jubilee Hall</option>
+            <option value="G1">G1 Class</option>
+            <option value="G2">G2 Class</option>
+            <option value="G3">G3 Class</option>
+            <option value="G4">G4 Class</option>
+            <option value="G5">G5 Class</option>
+            <option value="G6">G6 Class</option>
+            <option value="G7">G7 Class</option>
+            <option value="G8">G8 Class</option>
+            <option value="Department of Physical Education">Dept. of Physical Education (Gym)</option>
+            <option value="Ladies Toilet1">Ladies Toilet</option>
+            <option value="Canteen">Canteen</option>
+            <option value="Stairs_G3">Stair 3 G-F</option>
+            <option value="Bun World">Bun World</option>
+            <option value="Stock Room">Stock Room</option>
+            <option value="Health Center">Health Center</option>
+            <option value="Transformer">Transformer Room</option>
+            <option value="Garden">Garden Area</option>
+            <option value="Examination Room">Examination Room</option>
+            <option value="Deptartment of Psychology">Dept. of Psychology</option>
+            <option value="G9">G9 Class</option>
+            <option value="G10">G10 Class</option>
+            <option value="G11">G11 Class</option>
+            <option value="Department of Language">Dept. of Language</option>
+            <option value="Mens Toilet">Mens Toilet</option>
+            <option value="Fee Counter">Fee Counter</option>
+            <option value="Library">Library (Ground Floor)</option>
+            <option value="Reception">Reception</option>
+            <option value="PUC Principal Room">PUC Principal Room</option>
+            <option value="Stair_G1">Stair 1 G-F</option>
+            <option value="Muesum">Muesum</option>
+            <option value="Reprography">Reprography</option>
+            <option value="Stair_G2">Stair 2 G-F</option>
+            <option value="Stage">Stage</option>
+            <option value="Server Room">Server Room</option>
+            <option value="Finance Officer Room">Finance Officer Room (FO)</option>
+            <option value="Office Room">Office Room</option>
+            <option value="Degree PrincipalRoom">Degree Principal Room</option>
+            <option value="Lift_G">Lift (Elevator)</option>
+        </optgroup>
+        <optgroup label="First Floor" data-i18n-label="first_floor">
+                <option value="Stairs_F3">Stair 3 F-S</option>
+                <option value="Stairs_F1">Stair 1 F-S</option>
+                <option value="Stairs_F2">Stair 2 F-S</option>
+                <option value="BioTech Lab">BioTech Lab</option>
+                <option value="Zoology Lab1">Zoology Lab1</option>
+                <option value="Staff Room1">Staff Room1</option>
+                <option value="PGBioChem Lab">PG BioChemistry Lab</option>
+                <option value="MicroBio Lab">MicroBiology Laboratory</option>
+                <option value="Botany Lab1">Botany Lab1</option>
+                <option value="Botany Lab2">Botany Lab2</option>
+                <option value="F1">F1 Class</option>
+                <option value="F2">F2 Class</option>
+                <option value="F3">F3 Class</option>
+                <option value="F4">F4 Class</option>
+                <option value="F5">F5 Class</option>
+                <option value="Chem Lab3">Chemistry Lab3</option>
+                <option value="Chem Lab1">Chemistry Lab1</option>
+                <option value="Chem Lab2">Chemistry Lab2</option>
+                <option value="Department of Chemistry">Department of Chemistry</option>
+                <option value="Ladies Toilet2">Ladies Toilet2</option>
+                <option value="Physics Lab1">Physics Lab1</option>
+                <option value="Physics Lab2">Physics Lab2</option>
+                <option value="Physics Lab3">Physics Lab3</option>
+                <option value="Dept jornalisim">Department of Journalism</option>
+                <option value="Animal Room">Animal Room</option>
+                <option value="Dept Botany">Dept. Botany</option>
+                <option value="Lift_F">Lift (Elevator)</option>
+            </optgroup>
+        <optgroup label="Second Floor" data-i18n-label="second_floor">
+            <option value="Stairs_S3">Stair 3 S-T</option>
+            <option value="Stairs_S1">Stair 1 S-T</option>
+            <option value="Stairs_S2">Stair 2 S-T</option>
+            <option value="Stairs_S4">Stair 4 S-T</option>
+            <option value="Zoology Lab2">Zoology Lab2</option>
+            <option value="S1">S1 Class</option>
+            <option value="S2">S2 Lab</option>
+            <option value="S3">S3 Class</option>
+            <option value="S4">S4 Lab</option>
+            <option value="S5">S5 Class</option>
+            <option value="S6">S6 Lab</option>
+            <option value="S7">S7 Class</option>
+            <option value="S8">S8 Lab</option>
+            <option value="Common Room">Common Room</option>
+            <option value="Ladies Toilet3">Ladies Toilet3</option>
+            <option value="Dept of commerce office">Department of commerce Office</option>
+            <option value="HOD Room">HOD Room</option>
+            <option value="Office">Office</option>
+            <option value="Conference Room">Conference Room</option>
+            <option value="Seminar Hall2">Seminar Hall2</option>
+            <option value="HOD Room 2">HOD Room 2</option>
+            <option value="Dept of Management Studies">Department of Management Studies</option>
+            <option value="NCC AirWing Room">NCC AirWing Room</option>
+            <option value="S9">S9</option>
+            <option value="S10">S10 Class</option>
+            <option value="S11">S11 Lab</option>
+            <option value="S12">S12 Class</option>
+            <option value="Step1">Step1</option>
+            <option value="Londge">Londge</option>
+            <option value="Lift_S">Lift (Elevator)</option>
+        </optgroup>
+        <optgroup label="Third Floor" data-i18n-label="third_floor">
+            <option value="Stairs_T3">Stair 3 T-R</option>
+            <option value="Stairs_T2">Stair 2 T-R</option>
+            <option value="Stairs_T4">Stair 4 T-R</option>
+            <option value="Animal Cell Culture">Animal Cell Culture</option>
+            <option value="Life Science Research Center">Life Science Research Center</option>
+            <option value="T1">T1 Class</option>
+            <option value="T2">T2 Class</option>
+            <option value="T3">T3 Class</option>
+            <option value="Kannada Research Center">Kannada Research Center</option>
+            <option value="NCC Army Stock Room">NCC Army Stock Room</option>
+            <option value="T4">T4</option>
+            <option value="T5">T5</option>
+            <option value="T6">T6</option>
+            <option value="T7">T7</option>
+            <option value="DBT Room">DBT Room</option>
+            <option value="Commerce Research Center">Commerce Research Center</option>
+            <option value="Dept of commerce">Dept of commerce</option>
+            <option value="Business Lab">Business Lab</option>
+            <option value="T8">T8</option>
+            <option value="Lift_T">Lift (Elevator)</option>
+        </optgroup>
+</select>
+    
+    <div style="margin-top: 20px;">
+        <input type="text" id="filterRooms" class="filter-input" placeholder="Filter room descriptions by name or keyword...">
+    </div>
+    
+    <div class="room-description-header">
+        <h3>All Campus Rooms Description</h3>
+        <button id="scrollRightBtn" class="btn-scroll">Scroll →</button>
+    </div>
+    <div class="room-description-scroll-wrapper" id="roomScrollWrapper">
+        
+        <!-- NEW: Added Golden Jubilee Hall room description -->
+        <div class="room-description" data-room-name="Golden Jubilee Hall" data-room-key="Golden jubliee">
+            <div class="room-image">
+                <img src="{{ url_for('static', filename='Confrence Hall.png') }}" alt="Image of Golden Jubilee Hall">
+            </div>
+            <h2>Golden Jubilee Hall</h2>
+            <div class="room-meta">
+                <span class="icon">Ground Floor</span>
+                <span>Conference Hall</span>
+            </div>
+            <hr>
+            <p>The Golden Jubilee Hall is a spacious and well-equipped conference facility located on the Ground Floor. It serves as a venue for important college events, seminars, guest lectures, and official gatherings. The hall features modern audio-visual equipment, comfortable seating arrangements, and a professional atmosphere suitable for both academic and ceremonial functions.</p>
+            <div class="room-actions" style="margin-top: 15px; display: flex; gap: 10px;">
+                <button class="btn-scroll set-as-start-btn" style="flex: 1 1 0; background-color: var(--accent);">Set as Start</button>
+                <button class="btn-scroll set-as-end-btn" style="flex: 1 1 0;">Set as Destination</button>
+            </div>
+        </div>
+        
+        <div class="room-description" data-room-name="PG BioChemistry Lab" data-room-key="PG BioChemistry Lab">
+            <div class="room-image">
+                <img src="{{ url_for('static', filename='biochem_lab.jpg') }}" alt="Image of biochem lab">
+            </div>
+            <h2>PG BioChemistry Lab</h2>
+            <div class="room-meta">
+                <span class="icon">First Floor</span>
+                <span>Laboratory</span>
+            </div>
+            <hr>
+            <p>The Biochemistry Laboratory is sufficiently ventilated and provided with fuming chambers, incubation chambers, first aid unit and has convenient place to shelf analytical and corrosive chemicals. The laboratory is a hub to carry out practical experiments as prescribed by the university and is also equipped with high end gadgets.</p>
+            <div class="room-actions" style="margin-top: 15px; display: flex; gap: 10px;">
+                <button class="btn-scroll set-as-start-btn" style="flex: 1 1 0; background-color: var(--accent);">Set as Start</button>
+                <button class="btn-scroll set-as-end-btn" style="flex: 1 1 0;">Set as Destination</button>
+            </div>
+        </div>
+
+        <div class="room-description" data-room-name="Botany Lab1" data-room-key="Botany Lab1">
+            <div class="room-image">
+                <img src="{{ url_for('static', filename='botony_lab.jpg') }}" alt="Image of Botony lab1">
+            </div>
+            <h2>Botany Lab1</h2>
+            <div class="room-meta">
+                <span class="icon">First Floor</span>
+                <span>Laboratory</span>
+            </div>
+            <hr>
+            <p>The botany lab is well equipped with space for display of specimens and charts and each student is provided adequate attention and supervision during practical sessions. The lab provides an appropriate ambience for teaching staff and students to carryout research.</p>
+            <div class="room-actions" style="margin-top: 15px; display: flex; gap: 10px;">
+                <button class="btn-scroll set-as-start-btn" style="flex: 1 1 0; background-color: var(--accent);">Set as Start</button>
+                <button class="btn-scroll set-as-end-btn" style="flex: 1 1 0;">Set as Destination</button>
+            </div>
+        </div>
+        
+        <div class="room-description" data-room-name="Business Lab" data-room-key="Business Lab">
+            <div class="room-image">
+                <img src="{{ url_for('static', filename='business_lab.jpg') }}" alt="Image of Business Laboratory">
+            </div>
+            <h2>Business Lab</h2>
+            <div class="room-meta">
+                <span class="icon">Third Floor</span>
+                <span>Laboratory</span>
+            </div>
+            <hr>
+            <p>The Business Lab is a compact, highly functional space designed for practical learning and collaboration. It features a large, central whiteboard spanning one wall and a modular table setup that can be easily rearranged for group work or presentations.</p>
+            <div class="room-actions" style="margin-top: 15px; display: flex; gap: 10px;">
+                <button class="btn-scroll set-as-start-btn" style="flex: 1 1 0; background-color: var(--accent);">Set as Start</button>
+                <button class="btn-scroll set-as-end-btn" style="flex: 1 1 0;">Set as Destination</button>
+            </div>
+        </div>
+        
+        <div class="room-description" data-room-name="Chemistry Lab1" data-room-key="Chem Lab1">
+            <div class="room-image">
+                <img src="{{ url_for('static', filename='chem_lab.jpg') }}" alt="Image of Chemistry Lab1">
+            </div>
+            <h2>Chemistry Lab1</h2>
+            <div class="room-meta">
+                <span class="icon">First Floor</span>
+                <span>Laboratory</span>
+            </div>
+            <hr>
+            <p>The Chemistry lab is well equipped with relevant chemicals for students and staff to undertake practical experiments. All safety measures are followed to ensure safe lab practices.</p>
+            <div class="room-actions" style="margin-top: 15px; display: flex; gap: 10px;">
+                <button class="btn-scroll set-as-start-btn" style="flex: 1 1 0; background-color: var(--accent);">Set as Start</button>
+                <button class="btn-scroll set-as-end-btn" style="flex: 1 1 0;">Set as Destination</button>
+            </div>
+        </div>
+        
+        <div class="room-description" data-room-name="Computer Lab 1" data-room-key="ComputerLab_S">
+            <div class="room-image">
+                <img src="{{ url_for('static', filename='comp_lab.jpg') }}" alt="Image of Computer Lab 1">
+            </div>
+            <h2>Computer Lab1 </h2>
+            <div class="room-meta">
+                <span class="icon">Second Floor</span>
+                <span>Laboratory</span>
+            </div>
+            <hr>
+            <p>Students taking up project work in companies are able to design and develop projects using the latest version of the software. Adobe Master Collections is a special collection of software used exclusively for high end multimedia &web projects.</p>
+            <div class="room-actions" style="margin-top: 15px; display: flex; gap: 10px;">
+                <button class="btn-scroll set-as-start-btn" style="flex: 1 1 0; background-color: var(--accent);">Set as Start</button>
+                <button class="btn-scroll set-as-end-btn" style="flex: 1 1 0;">Set as Destination</button>
+            </div>
+        </div>
+        
+        <div class="room-description" data-room-name="Library" data-room-key="Library">
+            <div class="room-image">
+                <img src="{{ url_for('static', filename='lib.jpg') }}" alt="Image of Library">
+            </div>
+            <h2>Library </h2>
+            <div class="room-meta">
+                <span class="icon">Ground Floor</span>
+                <span>Library</span>
+            </div>
+            <hr>
+            <p>The main library on the ground floor, the PG library on the third floor and the department libraries provide ample learning resources for students and faculty. The library has a reading room, reprographic and internet facilities and also a good collection of books, journals and CDs.</p>
+            <div class="room-actions" style="margin-top: 15px; display: flex; gap: 10px;">
+                <button class="btn-scroll set-as-start-btn" style="flex: 1 1 0; background-color: var(--accent);">Set as Start</button>
+                <button class="btn-scroll set-as-end-btn" style="flex: 1 1 0;">Set as Destination</button>
+            </div>
+        </div>
+
+        <div class="room-description" data-room-name="Quadrangle" data-room-key="Garden">
+            <div class="room-image">
+                <img src="{{ url_for('static', filename='quadrangle.jpg') }}" alt="Image of quadrangle">
+            </div>
+            <h2>Quadrangle</h2>
+            <div class="room-meta">
+                <span class="icon">Ground Floor</span>
+                <span>resting area</span>
+            </div>
+            <hr>
+            <p>The Quadrangle is an airy, expansive open space located centrally on the ground floor, serving as a dedicated haven for breaks and informal gatherings. Its dominant feature is the abundance of natural light and an array of comfortable, durable seating</p>
+            <div class="room-actions" style="margin-top: 15px; display: flex; gap: 10px;">
+                <button class="btn-scroll set-as-start-btn" style="flex: 1 1 0; background-color: var(--accent);">Set as Start</button>
+                <button class="btn-scroll set-as-end-btn" style="flex: 1 1 0;">Set as Destination</button>
+            </div>
+        </div>
+
+        <div class="room-description" data-room-name="Computer Lab 2" data-room-key="ComputerLab2_S">
+            <div class="room-image">
+                <img src="{{ url_for('static', filename='Computer lab.png') }}" alt="Image of Computer Lab2 Lab">
+            </div>
+            <h2>Computer Lab 2</h2>
+            <div class="room-meta">
+                <span class="icon">Second Floor</span>
+                <span>Computer Lab 2</span>
+            </div>
+            <hr>
+            <p>A dedicated facility for programming classes and IT practicals, featuring multiple workstations.</p>
+            <div class="room-actions" style="margin-top: 15px; display: flex; gap: 10px;">
+                <button class="btn-scroll set-as-start-btn" style="flex: 1 1 0; background-color: var(--accent);">Set as Start</button>
+                <button class="btn-scroll set-as-end-btn" style="flex: 1 1 0;">Set as Destination</button>
+            </div>
+        </div>
+        
+        <div class="room-description" data-room-name="Department of Journalism" data-room-key="DepartmentofJournalism_First">
+            <div class="room-image">
+                <img src="{{ url_for('static', filename='Journalism Lab.png') }}" alt="Image of Department of Journalism">
+            </div>
+            <h2>Department of Journalism</h2>
+            <div class="room-meta">
+                <span class="icon">First Floor</span>
+                <span>Reading & Research</span>
+            </div>
+            <hr>
+            <p>The core reading room and stack area of the Journalism Lab. It offers a quiet zone for intense study and research.</p>
+            <div class="room-actions" style="margin-top: 15px; display: flex; gap: 10px;">
+                <button class="btn-scroll set-as-start-btn" style="flex: 1 1 0; background-color: var(--accent);">Set as Start</button>
+                <button class="btn-scroll set-as-end-btn" style="flex: 1 1 0;">Set as Destination</button>
+            </div>
+        </div>
+        
+        <div class="room-description" data-room-name="T1 Seminar" data-room-key="T1">
+            <div class="room-image">
+                <img src="{{ url_for('static', filename='Auditorium.png') }}" alt="Image of T1 Seminar Hall">
+            </div>
+            <h2>T1 Seminar</h2>
+            <div class="room-meta">
+                <span class="icon">Third Floor</span>
+                <span>Seminar Hall</span>
+            </div>
+            <hr>
+            <p>A large room on the Third Floor suitable for presentations, guest lectures, and department seminars.</p>
+            <div class="room-actions" style="margin-top: 15px; display: flex; gap: 10px;">
+                <button class="btn-scroll set-as-start-btn" style="flex: 1 1 0; background-color: var(--accent);">Set as Start</button>
+                <button class="btn-scroll set-as-end-btn" style="flex: 1 1 0;">Set as Destination</button>
+            </div>
+        </div>
+
+    </div>
+  </div>
+  </div>
+
+  <script>
+    // Language support
+    const translations = {
+      'en': {
+        'app_title': 'CAMAP-Campus Navigation',
+        'app_description': 'Navigate between any two locations across the college using Dijkstra\'s algorithm.',
+        'total_rooms': '53 Total Rooms',
+        'floors_connected': '4 Floors Connected',
+        'vertical_connections': '4 Vertical Connections',
+        'plan_route': 'Plan Your Multi-Floor Route',
+        'start_room': 'Start Room',
+        'destination_room': 'Destination Room',
+        'find_route_button': 'Find Route Button',
+        'find_route': 'Find Route →',
+        'start_placeholder': 'Type or select starting room',
+        'end_placeholder': 'Type or select destination room',
+        'select_start_room': 'Select starting room',
+        'select_destination_room': 'Select destination room',
+        'ground_floor': 'Ground Floor',
+        'first_floor': 'First Floor',
+        'second_floor': 'Second Floor',
+        'third_floor': 'Third Floor',
+        'filter_placeholder': 'Filter room descriptions by name or keyword...',
+        'all_rooms': 'All Campus Rooms Description',
+        'scroll_right': 'Scroll →',
+        'set_as_start': 'Set as Start',
+        'set_as_destination': 'Set as Destination',
+        'laboratory': 'Laboratory',
+        'library': 'Library',
+        'resting_area': 'resting area',
+        'computer_lab': 'Computer Lab',
+        'reading_research': 'Reading & Research',
+        'seminar_hall': 'Seminar Hall',
+        'profile': 'Profile',
+        'dashboard': 'Dashboard',
+        // Room descriptions
+        'biotech_lab_title': 'BioChemistry Laboratory',
+        'biotech_lab_desc': 'The Biochemistry Laboratory is sufficiently ventilated and provided with fuming chambers, incubation chambers, first aid unit and has convenient place to shelf analytical and corrosive chemicals. The laboratory is a hub to carry out practical experiments as prescribed by the university and is also equipped with high end gadgets.',
+        'botany_lab_title': 'Botony Laboratory',
+        'botany_lab_desc': 'The botany lab is well equipped with space for display of specimens and charts and each student is provided adequate attention and supervision during practical sessions. The lab provides an appropriate ambience for teaching staff and students to carryout research.',
+        'business_lab_title': 'Business Laboratory',
+        'business_lab_desc': 'The Business Lab is a compact, highly functional space designed for practical learning and collaboration. It features a large, central whiteboard spanning one wall and a modular table setup that can be easily rearranged for group work or presentations.',
+        'chemistry_lab_title': 'Chemistry Laboratory',
+        'chemistry_lab_desc': 'The Chemistry lab is well equipped with relevant chemicals for students and staff to undertake practical experiments. All safety measures are followed to ensure safe lab practices.',
+        'computer_lab_title': 'Computer Laboratory (Main)',
+        'computer_lab_desc': 'Students taking up project work in companies are able to design and develop projects using the latest version of the software. Adobe Master Collections is a special collection of software used exclusively for high end multimedia &web projects.',
+        'library_title': 'Library (Ground Floor)',
+        'library_desc': 'The main library on the ground floor, the PG library on the third floor and the department libraries provide ample learning resources for students and faculty. The library has a reading room, reprographic and internet facilities and also a good collection of books, journals and CDs.',
+        'quadrangle_title': 'Quadrangle',
+        'quadrangle_desc': 'The Quadrangle is an airy, expansive open space located centrally on the ground floor, serving as a dedicated haven for breaks and informal gatherings. Its dominant feature is the abundance of natural light and an array of comfortable, durable seating',
+        'computer_lab2_title': 'Computer Lab (2nd Floor)',
+        'computer_lab2_desc': 'A dedicated facility for programming classes and IT practicals, featuring multiple workstations.',
+        'main_library_title': 'Main Library (3rd Floor)',
+        'main_library_desc': 'The core reading room and stack area of the library. It offers a quiet zone for intense study and research.',
+        't1_seminar_title': 'T1 Seminar',
+        't1_seminar_desc': 'A large room on the Third Floor suitable for presentations, guest lectures, and department seminars.'
+      },
+      'hi': {
+        'app_title': 'कैमैप-कैंपस नेविगेशन',
+        'app_description': 'डिजक्स्ट्रा के एल्गोरिदम का उपयोग करके कॉलेज में किन्हीं दो स्थानों के बीच नेविगेट करें।',
+        'total_rooms': '53 कुल कमरे',
+        'floors_connected': '4 मंजिलें जुड़ी हुई',
+        'vertical_connections': '4 लंबवत कनेक्शन',
+        'plan_route': 'अपनी बहु-मंजिला रूट योजना बनाएं',
+        'start_room': 'प्रारंभ कक्ष',
+        'destination_room': 'गंतव्य कक्ष',
+        'find_route_button': 'रूट खोजें बटन',
+        'find_route': 'रूट खोजें →',
+        'start_placeholder': 'प्रारंभ कक्ष टाइप या चुनें',
+        'end_placeholder': 'गंतव्य कक्ष टाइप या चुनें',
+        'select_start_room': 'प्रारंभ कक्ष चुनें',
+        'select_destination_room': 'गंतव्य कक्ष चुनें',
+        'ground_floor': 'ग्राउंड फ्लोर',
+        'first_floor': 'पहली मंजिल',
+        'second_floor': 'दूसरी मंजिल',
+        'third_floor': 'तीसरी मंजिल',
+        'filter_placeholder': 'नाम या कीवर्ड से कक्ष विवरण फ़िल्टर करें...',
+        'all_rooms': 'सभी कैंपस कक्ष विवरण',
+        'scroll_right': 'स्क्रॉल →',
+        'set_as_start': 'प्रारंभ के रूप में सेट करें',
+        'set_as_destination': 'गंतव्य के रूप में सेट करें',
+        'laboratory': 'प्रयोगशाला',
+        'library': 'पुस्तकालय',
+        'resting_area': 'विश्राम क्षेत्र',
+        'computer_lab': 'कंप्यूटर लैब',
+        'reading_research': 'पठन और शोध',
+        'seminar_hall': 'सेमिनार हॉल',
+        'profile': 'प्रोफाइल',
+        'dashboard': 'डैशबोर्ड'
+      },
+      'kn': {
+        'app_title': 'ಕೆಮ್ಯಾಪ್-ಕ್ಯಾಂಪಸ್ ನ್ಯಾವಿಗೇಶನ್',
+        'app_description': 'ಡಿಜ್ಕ್ಟ್ರಾ ಅಲ್ಗಾರಿದಮ್ ಬಳಸಿ ಕಾಲೇಜಿನ ಯಾವುದೇ ಎರಡು ಸ್ಥಳಗಳ ನಡುವೆ ನ್ಯಾವಿಗೇಟ್ ಮಾಡಿ.',
+        'total_rooms': '53 ಒಟ್ಟು ಕೊಠಡಿಗಳು',
+        'floors_connected': '4 ಮಹಡಿಗಳು ಸಂಪರ್ಕಗೊಂಡಿವೆ',
+        'vertical_connections': '4 ಲಂಬ ಸಂಪರ್ಕಗಳು',
+        'plan_route': 'ನಿಮ್ಮ ಬಹು-ಮಹಡಿ ಮಾರ್ಗವನ್ನು ಯೋಜಿಸಿ',
+        'start_room': 'ಪ್ರಾರಂಭ ಕೊಠಡಿ',
+        'destination_room': 'ಗಮ್ಯಸ್ಥಾನ ಕೊಠಡಿ',
+        'find_route_button': 'ಮಾರ್ಗ ಹುಡುಕು ಬಟನ್',
+        'find_route': 'ಮಾರ್ಗ ಹುಡುಕಿ →',
+        'start_placeholder': 'ಪ್ರಾರಂಭ ಕೊಠಡಿ ಟೈಪ್ ಅಥವಾ ಆಯ್ಕೆಮಾಡಿ',
+        'end_placeholder': 'ಗಮ್ಯಸ್ಥಾನ ಕೊಠಡಿ ಟೈಪ್ ಅಥವಾ ಆಯ್ಕೆಮಾಡಿ',
+        'select_start_room': 'ಪ್ರಾರಂಭ ಕೊಠಡಿ ಆಯ್ಕೆಮಾಡಿ',
+        'select_destination_room': 'ಗಮ್ಯಸ್ಥಾನ ಕೊಠಡಿ ಆಯ್ಕೆಮಾಡಿ',
+        'ground_floor': 'ಗ್ರೌಂಡ್ ಫ್ಲೋರ್',
+        'first_floor': 'ಮೊದಲ ಮಹಡಿ',
+        'second_floor': 'ಎರಡನೇ ಮಹಡಿ',
+        'third_floor': 'ಮೂರನೇ ಮಹಡಿ',
+        'filter_placeholder': 'ಹೆಸರು ಅಥವಾ ಕೀವರ್ಡ್ ಮೂಲಕ ಕೊಠಡಿ ವಿವರಗಳನ್ನು ಫಿಲ್ಟರ್ ಮಾಡಿ...',
+        'all_rooms': 'ಎಲ್ಲಾ ಕ್ಯಾಂಪಸ್ ಕೊಠಡಿ ವಿವರಗಳು',
+        'scroll_right': 'ಸ್ಕ್ರೋಲ್ →',
+        'set_as_start': 'ಪ್ರಾರಂಭವಾಗಿ ಹೊಂದಿಸಿ',
+        'set_as_destination': 'ಗಮ್ಯಸ್ಥಾನವಾಗಿ ಹೊಂದಿಸಿ',
+        'laboratory': 'ಪ್ರಯೋಗಶಾಲೆ',
+        'library': 'ಗ್ರಂಥಾಲಯ',
+        'resting_area': 'ವಿಶ್ರಾಂತಿ ಪ್ರದೇಶ',
+        'computer_lab': 'ಕಂಪ್ಯೂಟರ್ ಲ್ಯಾಬ್',
+        'reading_research': 'ಓದುವಿಕೆ ಮತ್ತು ಸಂಶೋಧನೆ',
+        'seminar_hall': 'ಸೆಮಿನಾರ್ ಹಾಲ್',
+        'profile': 'ಪ್ರೊಫೈಲ್',
+        'dashboard': 'ಡ್ಯಾಶ್‌ಬೋರ್ಡ್'
+      },
+      'ta': {
+        'app_title': 'கேமாப்-கேம்பஸ் நேவிகேஷன்',
+        'app_description': 'டிஜ்க்ஸ்ட்ரா அல்காரிதத்தைப் பயன்படுத்தி கல்லூரியில் உள்ள ஏதேனும் இரண்டு இடங்களுக்கு இடையே செல்லவும்.',
+        'total_rooms': '53 மொத்த அறைகள்',
+        'floors_connected': '4 தளங்கள் இணைக்கப்பட்டுள்ளன',
+        'vertical_connections': '4 செங்குத்து இணைப்புகள்',
+        'plan_route': 'உங்கள் பல-தள பாதையைத் திட்டமிடுங்கள்',
+        'start_room': 'தொடக்க அறை',
+        'destination_room': 'சேரும் இட அறை',
+        'find_route_button': 'பாதை கண்டுபிடி பொத்தான்',
+        'find_route': 'பாதை கண்டுபிடி →',
+        'start_placeholder': 'தொடக்க அறையை தட்டச்சு அல்லது தேர்ந்தெடுக்கவும்',
+        'end_placeholder': 'சேரும் இட அறையை தட்டச்சு அல்லது தேர்ந்தெடுக்கவும்',
+        'select_start_room': 'தொடக்க அறையைத் தேர்ந்தெடுக்கவும்',
+        'select_destination_room': 'சேரும் இட அறையைத் தேர்ந்தெடுக்கவும்',
+        'ground_floor': 'தரை தளம்',
+        'first_floor': 'முதல் தளம்',
+        'second_floor': 'இரண்டாம் தளம்',
+        'third_floor': 'மூன்றாம் தளம்',
+        'filter_placeholder': 'பெயர் அல்லது முக்கிய சொல்லால் அறை விவரங்களை வடிகட்டவும்...',
+        'all_rooms': 'அனைத்து கேம்பஸ் அறை விவரங்கள்',
+        'scroll_right': 'ஸ்க்ரோல் →',
+        'set_as_start': 'தொடக்கமாக அமைக்கவும்',
+        'set_as_destination': 'சேரும் இடமாக அமைக்கவும்',
+        'laboratory': 'ஆய்வகம்',
+        'library': 'நூலகம்',
+        'resting_area': 'ஓய்வு பகுதி',
+        'computer_lab': 'கணினி ஆய்வகம்',
+        'reading_research': 'வாசிப்பு மற்றும் ஆராய்ச்சி',
+        'seminar_hall': 'கருத்தரங்கு மண்டபம்',
+        'profile': 'சுயவிவரம்',
+        'dashboard': 'டாஷ்போர்டு'
+      },
+      'te': {
+        'app_title': 'కేమాప్-క్యాంపస్ నావిగేషన్',
+        'app_description': 'డిజ్క్స్ట్రా అల్గోరిథం ఉపయోగించి కళాశాలలోని ఏవైనా రెండు స్థానాల మధ్య నావిగేట్ చేయండి.',
+        'total_rooms': '53 మొత్తం గదులు',
+        'floors_connected': '4 అంతస్తులు కనెక్ట్ అయ్యాయి',
+        'vertical_connections': '4 నిలువు కనెక్షన్లు',
+        'plan_route': 'మీ బహుళ-అంతస్తు మార్గాన్ని ప్లాన్ చేయండి',
+        'start_room': 'ప్రారంభ గది',
+        'destination_room': 'గమ్యస్థాన గది',
+        'find_route_button': 'మార్గం కనుగొను బటన్',
+        'find_route': 'మార్గం కనుగొనండి →',
+        'start_placeholder': 'ప్రారంభ గదిని టైప్ చేయండి లేదా ఎంచుకోండి',
+        'end_placeholder': 'గమ్యస్థాన గదిని టైప్ చేయండి లేదా ఎంచుకోండి',
+        'select_start_room': 'ప్రారంభ గదిని ఎంచుకోండి',
+        'select_destination_room': 'గమ్యస్థాన గదిని ఎంచుకోండి',
+        'ground_floor': 'గ్రౌండ్ ఫ్లోర్',
+        'first_floor': 'మొదటి అంతస్తు',
+        'second_floor': 'రెండవ అంతస్తు',
+        'third_floor': 'మూడవ అంతస్తు',
+        'filter_placeholder': 'పేరు లేదా కీవర్డ్ ద్వారా గది వివరాలను ఫిల్టర్ చేయండి...',
+        'all_rooms': 'అన్ని క్యాంపస్ గది వివరాలు',
+        'scroll_right': 'స్క్రోల్ →',
+        'set_as_start': 'ప్రారంభంగా సెట్ చేయండి',
+        'set_as_destination': 'గమ్యస్థానంగా సెట్ చేయండి',
+        'laboratory': 'ల్యాబొరేటరీ',
+        'library': 'లైబ్రరీ',
+        'resting_area': 'విశ్రాంతి ప్రదేశం',
+        'computer_lab': 'కంప్యూటర్ ల్యాబ్',
+        'reading_research': 'రీడింగ్ & రీసెర్చ్',
+        'seminar_hall': 'సెమినార్ హాల్',
+        'profile': 'ప్రొఫైల్',
+        'dashboard': 'డాష్‌బోర్డ్'
+      }
+    };
+
+    let currentLanguage = 'en';
+
+    // Language functions
+    function setLanguage(lang) {
+      currentLanguage = lang;
+      document.getElementById('currentLanguage').textContent = translations[lang].app_title.split('-')[0];
+      applyTranslations(lang);
+      saveLanguagePreference(lang);
+      
+      // Send language preference to server
+      fetch('/set-language', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ language: lang })
+      });
+    }
+
+    function applyTranslations(lang) {
+      const trans = translations[lang];
+      
+      // Update all elements with data-i18n attribute
+      document.querySelectorAll('[data-i18n]').forEach(element => {
+        const key = element.getAttribute('data-i18n');
+        if (trans[key]) {
+          element.textContent = trans[key];
+        }
+      });
+      
+      // Update placeholder texts
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
+        const key = element.getAttribute('data-i18n-placeholder');
+        if (trans[key]) {
+          element.placeholder = trans[key];
+        }
+      });
+      
+      // Update optgroup labels
+      document.querySelectorAll('optgroup[data-i18n-label]').forEach(element => {
+        const key = element.getAttribute('data-i18n-label');
+        if (trans[key]) {
+          element.label = trans[key];
+        }
+      });
+    }
+
+    function saveLanguagePreference(lang) {
+      localStorage.setItem('preferredLanguage', lang);
+    }
+
+    function loadLanguagePreference() {
+      const savedLang = localStorage.getItem('preferredLanguage');
+      if (savedLang && translations[savedLang]) {
+        return savedLang;
+      }
+      return 'en';
+    }
+
+    // NEW: Embedded Chatbot functionality
+    const chatbotContainer = document.getElementById('chatbotContainer');
+    const chatbotBtn = document.getElementById('chatbotBtn');
+    const chatbotClose = document.getElementById('chatbotClose');
+    const chatMessages = document.getElementById('chatMessages');
+    const chatInput = document.getElementById('chatInput');
+    const typingIndicator = document.getElementById('typingIndicator');
+
+    // Campus knowledge base
+    const campusKnowledge = {
+      'library': 'The main library is located on the Ground Floor near the Reception area. It has reading rooms, reprographic services, and internet facilities.',
+      'canteen': 'The main canteen is on the Ground Floor near Bun World. It\'s a great place to take a break and grab some food.',
+      'classroom': 'Classrooms are spread across all floors: G1-G11 on Ground Floor, F1-F5 on First Floor, S1-S12 on Second Floor.',
+      'laboratory': 'Labs are mainly on First and Third Floors. Chemistry and Physics labs on First Floor, Business and Research labs on Third Floor.',
+      'staff room': 'Staff Room 1 is on First Floor near F3 and F4 classrooms. Staff Room 2 is also on First Floor near Chemistry Department.',
+      'navigation': 'Use the navigation system to find the shortest path between any two locations. Select start and end points to get directions.',
+      'floor': 'The campus has 4 floors: Ground (G), First (F), Second (S), and Third (T) floors connected by stairs and elevators.',
+      'department': 'Key departments: Chemistry (1st Floor), Botany (1st Floor), Commerce (2nd Floor), Management (2nd Floor), Journalism (1st Floor).',
+      'reception': 'Reception is on Ground Floor near the main entrance. It\'s your first stop for general inquiries.',
+      'principal': 'Degree Principal Room and PUC Principal Room are both on Ground Floor near the Office Room.',
+      'washroom': 'Ladies toilets on each floor: Ground (near Gym), First (near Chemistry), Second (near Common Room). Mens toilet on Ground Floor.',
+      'gym': 'Department of Physical Education (Gym) is on Ground Floor near G8 classroom.',
+      'help': 'I can help you with room locations, navigation between floors, department information, and campus facilities. What specific help do you need?',
+      'hello': 'Hello! Welcome to MLACW Campus Assistant. How can I help you navigate our campus today?',
+      'hi': 'Hi there! I\'m here to help you find your way around MLACW campus. What would you like to know?'
+    };
+
+    // Default responses for unknown queries
+    const defaultResponses = [
+      "I'm not sure about that. Could you try asking about room locations, departments, or campus navigation?",
+      "I specialize in campus navigation. Try asking about specific rooms, floors, or departments.",
+      "That's beyond my campus navigation knowledge. I can help you find rooms, labs, offices, or departments.",
+      "I'm designed to help with campus navigation. Ask me about locations, directions, or facilities."
+    ];
+
+    // Chatbot functions
+    function toggleChatbot() {
+      chatbotContainer.classList.toggle('active');
+      if (chatbotContainer.classList.contains('active')) {
+        chatInput.focus();
+      }
+    }
+
+    function closeChatbot() {
+      chatbotContainer.classList.remove('active');
+    }
+
+    function sendChatMessage() {
+      const message = chatInput.value.trim();
+      if (message === '') return;
+
+      // Add user message to chat
+      addChatMessage(message, 'user');
+      chatInput.value = '';
+
+      // Show typing indicator
+      showTypingIndicator();
+
+      // Simulate bot thinking time
+      setTimeout(() => {
+        hideTypingIndicator();
+        const response = generateChatResponse(message);
+        addChatMessage(response, 'bot');
+      }, 1000 + Math.random() * 1000);
+    }
+
+    function sendQuickMessage(message) {
+      addChatMessage(message, 'user');
+      
+      // Show typing indicator
+      showTypingIndicator();
+
+      // Simulate bot thinking time
+      setTimeout(() => {
+        hideTypingIndicator();
+        const response = generateChatResponse(message);
+        addChatMessage(response, 'bot');
+      }, 1000 + Math.random() * 1000);
+    }
+
+    function handleChatKeyPress(event) {
+      if (event.key === 'Enter') {
+        sendChatMessage();
+      }
+    }
+
+    function addChatMessage(text, sender) {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${sender}-message`;
+      messageDiv.textContent = text;
+      chatMessages.appendChild(messageDiv);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function showTypingIndicator() {
+      typingIndicator.style.display = 'block';
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function hideTypingIndicator() {
+      typingIndicator.style.display = 'none';
+    }
+
+    function generateChatResponse(userMessage) {
+      const lowerMessage = userMessage.toLowerCase();
+      
+      // Check for exact matches in knowledge base
+      for (const [key, response] of Object.entries(campusKnowledge)) {
+        if (lowerMessage.includes(key)) {
+          return response;
+        }
+      }
+
+      // Check for related terms
+      if (lowerMessage.includes('where') || lowerMessage.includes('location')) {
+        return "I can help you find locations! Try asking about specific rooms like 'library', 'canteen', 'lab', or 'classroom'.";
+      }
+      
+      if (lowerMessage.includes('how to find') || lowerMessage.includes('direction')) {
+        return "Use the navigation system on the main page to find the shortest path between any two locations on campus.";
+      }
+      
+      if (lowerMessage.includes('floor') || lowerMessage.includes('level')) {
+        return "The campus has 4 floors: Ground (G), First (F), Second (S), and Third (T). Each floor has different facilities and departments.";
+      }
+
+      // Return random default response
+      return defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
+    }
+
+    // NEW: Voice Command Functionality
+    const voiceBtn = document.getElementById('voiceBtn');
+    const voicePopup = document.getElementById('voicePopup');
+    const voicePopupClose = document.getElementById('voicePopupClose');
+    const voiceStatus = document.getElementById('voiceStatus');
+    const voiceTranscript = document.getElementById('voiceTranscript');
+
+    let recognition = null;
+    let isListening = false;
+
+    // Check if browser supports speech recognition
+    function initializeSpeechRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      
+      if (!SpeechRecognition) {
+        voiceStatus.textContent = "Speech recognition not supported in this browser";
+        voiceBtn.style.display = 'none';
+        return false;
+      }
+
+      recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onstart = function() {
+        isListening = true;
+        voiceBtn.classList.add('listening');
+        voiceStatus.textContent = "Listening... Speak now";
+        voiceStatus.style.color = "var(--success)";
+      };
+
+      recognition.onresult = function(event) {
+        let finalTranscript = '';
+        let interimTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript;
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+
+        voiceTranscript.textContent = finalTranscript || interimTranscript;
+
+        // If we have a final transcript, process it
+        if (finalTranscript) {
+          processVoiceCommand(finalTranscript);
+        }
+      };
+
+      recognition.onerror = function(event) {
+        console.error('Speech recognition error:', event.error);
+        voiceStatus.textContent = `Error: ${event.error}`;
+        voiceStatus.style.color = "var(--danger)";
+        stopListening();
+      };
+
+      recognition.onend = function() {
+        stopListening();
+      };
+
+      return true;
+    }
+
+    function startListening() {
+      if (!recognition && !initializeSpeechRecognition()) {
+        return;
+      }
+
+      try {
+        recognition.start();
+        voicePopup.classList.add('active');
+      } catch (error) {
+        console.error('Error starting speech recognition:', error);
+        voiceStatus.textContent = "Error starting microphone";
+        voiceStatus.style.color = "var(--danger)";
+      }
+    }
+
+    function stopListening() {
+      if (recognition) {
+        try {
+          recognition.stop();
+        } catch (error) {
+          console.error('Error stopping speech recognition:', error);
+        }
+      }
+      isListening = false;
+      voiceBtn.classList.remove('listening');
+      voiceStatus.textContent = "Click the microphone and speak your destination";
+      voiceStatus.style.color = "";
+    }
+
+    function processVoiceCommand(command) {
+      const lowerCommand = command.toLowerCase().trim();
+      
+      // Show processing status
+      voiceStatus.textContent = "Processing your command...";
+      voiceStatus.style.color = "var(--accent)";
+
+      // Parse the command to extract destination
+      let destination = null;
+      
+      // Common command patterns
+      const patterns = [
+        /(?:navigate|go|take me|direct me|show me|find)(?:.*?)(?:to|from)(?:\s+the)?\s+(.+)/i,
+        /(?:how.*?\s+to|get to|reach)\s+(?:the\s+)?(.+)/i,
+        /(?:directions?|route|path)\s+(?:to|for)\s+(?:the\s+)?(.+)/i,
+        /(?:i want to go to|i need to go to)\s+(?:the\s+)?(.+)/i,
+        /(?:where is|locate)\s+(?:the\s+)?(.+)/i
+      ];
+
+      for (const pattern of patterns) {
+        const match = lowerCommand.match(pattern);
+        if (match && match[1]) {
+          destination = match[1].trim();
+          break;
+        }
+      }
+
+      // If no pattern matched, try to extract the last word as destination
+      if (!destination) {
+        const words = lowerCommand.split(' ');
+        if (words.length > 1) {
+          destination = words[words.length - 1];
+        } else {
+          destination = lowerCommand;
+        }
+      }
+
+      // Clean up destination (remove question marks, etc.)
+      destination = destination.replace(/[?\.!]/g, '').trim();
+
+      // Map common spoken terms to actual room names
+      const roomMapping = {
+        // Library variations
+        'library': 'Library',
+        'main library': 'Library',
+        'ground library': 'Library',
+        'reading room': 'Library',
+        
+        // Canteen variations
+        'canteen': 'Canteen',
+        'cafeteria': 'Canteen',
+        'food court': 'Canteen',
+        'eating area': 'Canteen',
+        'mess': 'Canteen',
+        
+        // Principal offices
+        'principal office': 'Degree PrincipalRoom',
+        'principal room': 'Degree PrincipalRoom',
+        'principal': 'Degree PrincipalRoom',
+        'puc principal': 'PUC Principal Room',
+        'degree principal': 'Degree PrincipalRoom',
+        
+        // Labs
+        'chemistry lab': 'Chem Lab1',
+        'chem lab': 'Chem Lab1',
+        'physics lab': 'Physics Lab1',
+        'computer lab': 'ComputerLab_S',
+        'biology lab': 'BioTech Lab',
+        'biotech lab': 'BioTech Lab',
+        'botany lab': 'Botany Lab1',
+        'zoology lab': 'Zoology Lab1',
+        'business lab': 'Business Lab',
+        
+        // Classrooms
+        'classroom g1': 'G1',
+        'class g1': 'G1',
+        'g1 class': 'G1',
+        'classroom f1': 'F1',
+        'class f1': 'F1',
+        'f1 class': 'F1',
+        
+        // Reception
+        'reception': 'Reception',
+        'front desk': 'Reception',
+        'information desk': 'Reception',
+        
+        // Gym
+        'gym': 'Department of Physical Education',
+        'gym room': 'Department of Physical Education',
+        'physical education': 'Department of Physical Education',
+        
+        // Departments
+        'chemistry department': 'Department of Chemistry',
+        'botany department': 'Dept Botany',
+        'journalism department': 'Dept jornalisim',
+        'management department': 'Dept of Management Studies',
+        'commerce department': 'Dept of commerce office',
+        
+        // Common areas
+        'garden': 'Garden',
+        'quadrangle': 'Garden',
+        'stage': 'Stage',
+        'auditorium': 'Golden jubliee',
+        'seminar hall': 'Golden jubliee',
+        'conference hall': 'Golden jubliee'
+      };
+
+      // Find the actual room name from mapping or use the spoken term
+      let actualRoom = roomMapping[destination] || destination;
+      
+      // Convert to proper case for display
+      const displayRoom = actualRoom.split(' ').map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+      ).join(' ');
+
+      // Try to find the room in our room maps
+      const roomKey = findRoomKeyByDisplayName(displayRoom);
+      
+      if (roomKey) {
+        voiceStatus.textContent = `Setting destination to: ${displayRoom}`;
+        voiceStatus.style.color = "var(--success)";
+        
+        // Set the destination in the form
+        setTimeout(() => {
+          document.getElementById('endInput').value = displayRoom;
+          voicePopup.classList.remove('active');
+          
+          // Optional: Auto-submit the form
+          // document.getElementById('routeForm').dispatchEvent(new Event('submit'));
+          
+        }, 1500);
+      } else {
+        voiceStatus.textContent = `Could not find: "${displayRoom}". Please try a different name.`;
+        voiceStatus.style.color = "var(--danger)";
+        
+        // Show suggestions for similar rooms
+        setTimeout(() => {
+          showRoomSuggestions(destination);
+        }, 2000);
+      }
+    }
+
+    function findRoomKeyByDisplayName(displayName) {
+      // Search in both start and end room maps
+      for (const [key, value] of Object.entries(startRoomMap)) {
+        if (key.toLowerCase().includes(displayName.toLowerCase()) || 
+            value.toLowerCase().includes(displayName.toLowerCase())) {
+          return value;
+        }
+      }
+      for (const [key, value] of Object.entries(endRoomMap)) {
+        if (key.toLowerCase().includes(displayName.toLowerCase()) || 
+            value.toLowerCase().includes(displayName.toLowerCase())) {
+          return value;
+        }
+      }
+      return null;
+    }
+
+    function showRoomSuggestions(spokenRoom) {
+      const suggestions = [];
+      const lowerSpoken = spokenRoom.toLowerCase();
+      
+      // Search for similar room names
+      for (const [displayName, roomKey] of Object.entries(endRoomMap)) {
+        if (displayName.toLowerCase().includes(lowerSpoken) || 
+            roomKey.toLowerCase().includes(lowerSpoken)) {
+          suggestions.push(displayName);
+          if (suggestions.length >= 3) break;
+        }
+      }
+      
+      if (suggestions.length > 0) {
+        voiceTranscript.innerHTML = `Did you mean:<br>${suggestions.map(s => `• ${s}`).join('<br>')}`;
+      }
+    }
+
+    function setVoiceExample(command) {
+      voiceTranscript.textContent = command;
+      processVoiceCommand(command);
+    }
+
+    // Voice command event listeners
+    voiceBtn.addEventListener('click', function() {
+      if (isListening) {
+        stopListening();
+      } else {
+        startListening();
+      }
+    });
+
+    voicePopupClose.addEventListener('click', function() {
+      voicePopup.classList.remove('active');
+      stopListening();
+    });
+
+    // Close voice popup when clicking outside
+    document.addEventListener('click', function(e) {
+      if (!voiceBtn.contains(e.target) && !voicePopup.contains(e.target)) {
+        voicePopup.classList.remove('active');
+        stopListening();
+      }
+    });
+
+    // Tour functionality for front1 page
+    let currentTourStep = 0;
+    let tourStarted = false;
+
+    const tourSteps = [
+      {
+        title: "Welcome to caMap Navigation!",
+        description: "Let's explore how to use the campus navigation system to find your way around.",
+        element: null,
+        position: "center"
+      },
+      {
+        title: "Plan Your Route",
+        description: "Start by selecting your starting point and destination. The system will find the shortest path.",
+        element: "routeForm",
+        position: "bottom"
+      },
+      {
+        title: "Start Location",
+        description: "Type or select your starting location from the dropdown list.",
+        element: "startInput",
+        position: "bottom"
+      },
+      {
+        title: "Destination",
+        description: "Choose where you want to go. You can select from classrooms, labs, offices, and more.",
+        element: "endInput",
+        position: "bottom"
+      },
+      {
+        title: "Room Information",
+        description: "Scroll through room descriptions to learn more about each location. You can also filter them using the search box above.",
+        element: "filterRooms",
+        position: "top"
+      },
+      {
+        title: "Ready to Navigate!",
+        description: "Click 'Find Route' to get directions between your selected locations and see the optimal path.",
+        element: "findRouteBtn",
+        position: "top"
+      }
+    ];
+
+    function startTour() {
+      // Check if user has seen the tour before
+      const hasSeenTour = localStorage.getItem('hasSeenFrontTour');
+      if (hasSeenTour) {
+        return; // Don't show tour if already seen
+      }
+
+      // Check if user is returning (has user info in localStorage)
+      const userLoggedIn = localStorage.getItem('userLoggedIn');
+      if (userLoggedIn) {
+        return; // Don't show tour for returning users
+      }
+
+      tourStarted = true;
+      currentTourStep = 0;
+      
+      // Show tour elements
+      document.getElementById('tourOverlay').style.display = 'block';
+      document.getElementById('tourPopup').style.display = 'block';
+      document.getElementById('tourProgress').style.display = 'block';
+      
+      showTourStep(currentTourStep);
+    }
+
+    function showTourStep(stepIndex) {
+      const step = tourSteps[stepIndex];
+      
+      // Update progress
+      document.getElementById('tourProgress').textContent = `Step ${stepIndex + 1} of ${tourSteps.length}`;
+      
+      // Update popup content
+      document.getElementById('tourTitle').textContent = step.title;
+      document.getElementById('tourDescription').textContent = step.description;
+      
+      // Update buttons
+      const prevBtn = document.getElementById('tourPrev');
+      const nextBtn = document.getElementById('tourNext');
+      
+      prevBtn.style.display = stepIndex === 0 ? 'none' : 'inline-block';
+      nextBtn.textContent = stepIndex === tourSteps.length - 1 ? 'Finish' : 'Next';
+      
+      // Position the popup and highlight
+      if (step.element && document.getElementById(step.element)) {
+        const element = document.getElementById(step.element);
+        
+        // Scroll element into view first
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        // Use setTimeout to ensure scroll completes before positioning
+        setTimeout(() => {
+          const rect = element.getBoundingClientRect();
+          
+          // Show highlight
+          const highlight = document.getElementById('tourHighlight');
+          highlight.style.width = `${rect.width + 20}px`;
+          highlight.style.height = `${rect.height + 20}px`;
+          highlight.style.left = `${rect.left + window.pageXOffset - 10}px`;
+          highlight.style.top = `${rect.top + window.pageYOffset - 10}px`;
+          highlight.style.display = 'block';
+          
+          // Position popup with better spacing
+          positionPopup(step.position, rect, stepIndex);
+        }, 300);
+      } else {
+        // Center popup for welcome step
+        document.getElementById('tourHighlight').style.display = 'none';
+        positionPopup('center');
+      }
+    }
+
+    function positionPopup(position, rect = null, stepIndex = 0) {
+      const popup = document.getElementById('tourPopup');
+      const padding = 20;
+      const viewportPadding = 15;
+      
+      // Reset transform first
+      popup.style.transform = '';
+      
+      if (position === 'center') {
+        popup.style.left = '50%';
+        popup.style.top = '50%';
+        popup.style.transform = 'translate(-50%, -50%)';
+      } else if (rect) {
+        let left, top;
+        
+        switch(position) {
+          case 'top':
+            left = rect.left + rect.width/2 + window.pageXOffset;
+            top = rect.top + window.pageYOffset - popup.offsetHeight - padding - 10;
+            popup.style.transform = 'translateX(-50%)';
+            break;
+          case 'bottom':
+            left = rect.left + rect.width/2 + window.pageXOffset;
+            top = rect.bottom + window.pageYOffset + padding;
+            popup.style.transform = 'translateX(-50%)';
+            break;
+          case 'left':
+            left = rect.left + window.pageXOffset - popup.offsetWidth - padding;
+            top = rect.top + window.pageYOffset + rect.height/2;
+            popup.style.transform = 'translateY(-50%)';
+            break;
+          case 'right':
+            left = rect.right + window.pageXOffset + padding;
+            top = rect.top + window.pageYOffset + rect.height/2;
+            popup.style.transform = 'translateY(-50%)';
+            break;
+        }
+        
+        // Boundary checking to keep popup within viewport
+        const popupWidth = popup.offsetWidth;
+        const popupHeight = popup.offsetHeight;
+        
+        // Check left boundary
+        if (left < viewportPadding) {
+          left = viewportPadding;
+        }
+        
+        // Check right boundary
+        if (left + popupWidth > window.innerWidth - viewportPadding) {
+          left = window.innerWidth - popupWidth - viewportPadding;
+        }
+        
+        // Check top boundary
+        if (top < viewportPadding) {
+          top = viewportPadding;
+        }
+        
+        // Check bottom boundary
+        if (top + popupHeight > window.innerHeight - viewportPadding) {
+          top = window.innerHeight - popupHeight - viewportPadding;
+        }
+        
+        popup.style.left = `${left}px`;
+        popup.style.top = `${top}px`;
+      }
+    }
+
+    function nextTourStep() {
+      if (currentTourStep < tourSteps.length - 1) {
+        currentTourStep++;
+        showTourStep(currentTourStep);
+      } else {
+        finishTour();
+      }
+    }
+
+    function prevTourStep() {
+      if (currentTourStep > 0) {
+        currentTourStep--;
+        showTourStep(currentTourStep);
+      }
+    }
+
+    function finishTour() {
+      // Mark tour as completed
+      localStorage.setItem('hasSeenFrontTour', 'true');
+      
+      // Hide all tour elements
+      document.getElementById('tourOverlay').style.display = 'none';
+      document.getElementById('tourHighlight').style.display = 'none';
+      document.getElementById('tourPopup').style.display = 'none';
+      document.getElementById('tourProgress').style.display = 'none';
+      
+      tourStarted = false;
+    }
+
+    // --- NEW: Data Population and Validation Logic for Searchable Input ---
+    
+    // Function to populate a datalist from a select element and create a lookup map
+    function populateDatalist(selectElementId, datalistElementId) {
+        const select = document.getElementById(selectElementId);
+        const datalist = document.getElementById(datalistElementId);
+        
+        // Clear existing options
+        datalist.innerHTML = ''; 
+        
+        // Map: Display Name (e.g., "G1 Class") -> Node Key (e.g., "G1")
+        const roomMap = {};
+
+        // Iterate through all option elements in the hidden select
+        Array.from(select.options).forEach(option => {
+            if (option.value) { // Skip the placeholder option
+                const optionElement = document.createElement('option');
+                // The value is what the user sees/types (the display name)
+                optionElement.value = option.textContent.trim(); 
+                datalist.appendChild(optionElement);
+                // Store the mapping for form validation/submission
+                roomMap[option.textContent.trim()] = option.value;
+            }
+        });
+        return roomMap;
+    }
+    
+    // Global maps for quick lookup of the node key from the display name
+    let startRoomMap = {};
+    let endRoomMap = {};
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        // Initialize language
+        const savedLang = loadLanguagePreference();
+        setLanguage(savedLang);
+
+        // Chatbot event listeners
+        chatbotBtn.addEventListener('click', toggleChatbot);
+        chatbotClose.addEventListener('click', closeChatbot);
+
+        // Language selector functionality - now integrated into nav menu
+        const languageBtn = document.getElementById('languageBtn');
+        const languageDropdown = document.getElementById('languageDropdown');
+        
+        languageBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent closing the nav dropdown
+            languageDropdown.classList.toggle('show');
+        });
+
+        // Language option selection
+        document.querySelectorAll('.language-dropdown .nav-option').forEach(option => {
+            option.addEventListener('click', () => {
+                const lang = option.getAttribute('data-lang');
+                setLanguage(lang);
+                languageDropdown.classList.remove('show');
+            });
+        });
+
+        // NEW: Navigation menu functionality
+        const navBtn = document.getElementById('navBtn');
+        const navDropdown = document.getElementById('navDropdown');
+        
+        navBtn.addEventListener('click', () => {
+            navDropdown.classList.toggle('show');
+            // Close language dropdown when opening nav dropdown
+            languageDropdown.classList.remove('show');
+        });
+
+        // Close navigation dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!navBtn.contains(e.target) && !navDropdown.contains(e.target)) {
+                navDropdown.classList.remove('show');
+                languageDropdown.classList.remove('show');
+            }
+        });
+
+        // Profile button functionality
+        document.getElementById('profileBtn').addEventListener('click', () => {
+            // Navigate to profile page
+            window.location.href = '/profile';
+        });
+
+        // Dashboard button functionality
+        document.getElementById('dashboardBtn').addEventListener('click', () => {
+            // Navigate to dashboard page
+            window.location.href = '/dashboard';
+        });
+
+        // Tour event listeners
+        document.getElementById('tourNext').addEventListener('click', nextTourStep);
+        document.getElementById('tourPrev').addEventListener('click', prevTourStep);
+        document.getElementById('tourSkip').addEventListener('click', finishTour);
+
+        // Start tour after a short delay (only for new users)
+        setTimeout(startTour, 1000);
+
+        // Run initial population of datalists on load
+        startRoomMap = populateDatalist('originalStartSelect', 'startRoomList');
+        endRoomMap = populateDatalist('originalEndSelect', 'endRoomList');
+
+        // Initialize speech recognition when page loads
+        initializeSpeechRecognition();
+    });
+
+
+    // --- Form Submission Logic (FIXED) ---
+    document.getElementById('routeForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const startInput = document.getElementById('startInput');
+        const endInput = document.getElementById('endInput');
+        
+        // Get the display name entered by the user
+        const startDisplayName = startInput.value.trim(); 
+        const endDisplayName = endInput.value.trim(); 
+        
+        // Look up the corresponding Node Key using the map
+        const start = startRoomMap[startDisplayName]; 
+        const end = endRoomMap[endDisplayName]; 
+
+        // 1. Validation: Check if a valid room name was entered (if it exists in the map)
+        if (!start) {
+            alert(`⚠️ Please select a valid Starting Room from the list.`);
+            startInput.focus();
+            return;
+        }
+        if (!end) {
+            alert(`⚠️ Please select a valid Destination Room from the list.`);
+            endInput.focus();
+            return;
+        }
+        
+        // 2. Validation: Check if start and end are the same
+        if (start === end) {
+            alert("⚠️ Start and Destination cannot be the same!");
+            return;
+        }
+
+        // 3. Navigate to the route page with selected start/end points (using the Node Keys)
+        window.location.href = `/route?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`;
+    });
+
+    const scrollWrapper = document.getElementById('roomScrollWrapper');
+    const scrollRightBtn = document.getElementById('scrollRightBtn');
+    
+    // --- Tab Switching Logic (Kept as is for map) ---
+    const tabs = document.querySelectorAll('.tab');
+    const mapImage = document.getElementById('groundFloorStaticMap'); 
+    
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+
+            const floor = tab.getAttribute('data-floor');
+            mapImage.src = '{{ url_for("static", filename="mlacw.jpg") }}'; 
+            mapImage.alt = `${floor.charAt(0).toUpperCase() + floor.slice(1)} Floor Map`;
+            mapImage.style.display = 'block'; 
+        });
+    });
+
+
+    // --- Room Description Filtering Logic ---
+    const filterInput = document.getElementById('filterRooms');
+    const roomDescriptions = document.querySelectorAll('.room-description');
+
+    if (filterInput) {
+        filterInput.addEventListener('keyup', function() {
+            const filterText = this.value.toLowerCase();
+
+            roomDescriptions.forEach(card => {
+                // Get all text content (including h2, p, span) and convert to lowercase
+                const textContent = card.textContent.toLowerCase();
+                
+                if (textContent.includes(filterText)) {
+                    // Show the card
+                    card.classList.remove('hidden');
+                } else {
+                    // Hide the card
+                    card.classList.add('hidden');
+                }
+            });
+        });
+    }
+
+    // --- Scroll Right Functionality ---
+    if (scrollRightBtn && scrollWrapper) {
+        scrollRightBtn.addEventListener('click', () => {
+            // Scroll by a fixed amount (e.g., 90% of the wrapper's width)
+            const scrollDistance = scrollWrapper.clientWidth * 0.9;
+            scrollWrapper.scrollBy({
+                left: scrollDistance,
+                behavior: 'smooth'
+            });
+        });
+    }
+    
+    // --- Room Description Button Logic (FIXED) ---
+    
+    /**
+     * Sets the value of a route input field using the room's display name.
+     * @param {HTMLInputElement} inputElement - The Start or End input field.
+     * @param {string} displayName - The user-friendly name of the room.
+     */
+    function setRoomInput(inputElement, displayName) {
+        inputElement.value = displayName;
+    }
+
+    document.querySelectorAll('.room-description').forEach(card => {
+        // Get the friendly room name (what the user sees)
+        const roomDisplayName = card.querySelector('h2').textContent.trim(); 
+        
+        if (roomDisplayName) {
+            // Find "Set as Start" button within the card
+            const startBtn = card.querySelector('.set-as-start-btn');
+            if (startBtn) {
+                startBtn.addEventListener('click', () => {
+                    const startInput = document.getElementById('startInput');
+                    setRoomInput(startInput, roomDisplayName);
+                });
+            }
+
+            // Find "Set as Destination" button within the card
+            const endBtn = card.querySelector('.set-as-end-btn');
+            if (endBtn) {
+                endBtn.addEventListener('click', () => {
+                    const endInput = document.getElementById('endInput');
+                    setRoomInput(endInput, roomDisplayName);
+                });
+            }
+        }
+    });
+	
+	    // Debug function to check user status
+    function debugUserStatus() {
+      fetch('/check-user-exists')
+        .then(response => response.json())
+        .then(data => {
+          console.log('User exists in database:', data.user_exists);
+          console.log('Session data:', {
+            user_id: '{{ session.get("user_id", "None") }}',
+            session_id: '{{ session.get("session_id", "None") }}',
+            user_name: '{{ session.get("user_name", "None") }}'
+          });
+        })
+        .catch(error => {
+          console.error('Debug error:', error);
+        });
+    }
+
+    // Call debug on page load
+    setTimeout(debugUserStatus, 500);
+
+  </script>
+</body>
+</html>

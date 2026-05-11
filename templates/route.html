@@ -1,0 +1,1855 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="route_page_title">Route | CAMAP</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* Your existing CSS styles remain exactly the same */
+        /* Additional styles specific to route page */
+        .route-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .route-header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        
+        .route-info {
+            font-size: 1.1rem;
+            color: var(--muted);
+        }
+        
+        .legend {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-top: 12px;
+            flex-wrap: wrap;
+            font-size: 12px;
+            color: var(--muted);
+            justify-content: center;
+        }
+
+        .legend-item {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.08);
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            color: #fff;
+        }
+
+        .swatch { 
+            width: 12px; 
+            height: 12px; 
+            border-radius: 3px; 
+        }
+
+        .swatch-start { background: #28a745; }
+        .swatch-end { background: #dc3545; }
+        .swatch-path { background: #007bff; }
+        .swatch-classroom { background: #4ecf92; }
+        .swatch-lab { background: #29b6f6; }
+        .swatch-department { background: #9c27b0; }
+        .swatch-stairs { background: #795548; }
+        
+        .error-message {
+            background: var(--danger);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        /* NEW: Navigation Menu Styles - FIXED BACKGROUND */
+        .nav-menu {
+          position: absolute;
+          top: 20px;
+          right: 20px;
+          z-index: 100;
+        }
+
+        .nav-btn {
+          background: rgba(255, 255, 255, 0.15);
+          color: white;
+          border: 1px solid var(--border);
+          padding: 8px 12px;
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 14px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .nav-dropdown {
+          position: absolute;
+          top: 100%;
+          right: 0;
+          background: var(--bg); /* FIXED: Changed from transparent to solid background */
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          margin-top: 5px;
+          min-width: 180px;
+          display: none;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); /* Added shadow for better visibility */
+          backdrop-filter: blur(10px); /* Added blur effect for modern look */
+        }
+
+        .nav-dropdown.show {
+          display: block;
+        }
+
+        .nav-option {
+          padding: 12px 15px;
+          cursor: pointer;
+          border-bottom: 1px solid var(--border);
+          transition: background 0.2s;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .nav-option:hover {
+          background: rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-option:last-child {
+          border-bottom: none;
+        }
+
+        .nav-icon {
+          font-size: 16px;
+        }
+
+        /* REMOVED: Standalone Language Selector Styles - Now integrated into nav menu */
+
+        /* REMOVED: GPS Controls Styles */
+
+        /* Tour Styles */
+        .tour-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0, 0, 0, 0.7);
+          z-index: 9998;
+          display: none;
+        }
+
+        .tour-highlight {
+          position: absolute;
+          border: 3px solid #ffd700;
+          border-radius: 8px;
+          box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7), 0 0 20px rgba(255, 215, 0, 0.5);
+          z-index: 9999;
+          transition: all 0.3s ease;
+        }
+
+        .tour-popup {
+          position: absolute;
+          background: white;
+          color: #333;
+          padding: 20px;
+          border-radius: 12px;
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+          z-index: 10000;
+          max-width: 280px;
+          min-width: 250px;
+          font-family: "Poppins", sans-serif;
+          max-height: 90vh;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .tour-popup h3 {
+          margin: 0 0 12px 0;
+          color: #391118;
+          font-size: 1.1rem;
+          line-height: 1.3;
+        }
+
+        .tour-popup p {
+          margin: 0 0 15px 0;
+          line-height: 1.4;
+          font-size: 0.85rem;
+          flex: 1;
+          overflow-y: auto;
+          padding-right: 5px;
+          max-height: 120px;
+          min-height: 40px;
+        }
+
+        .tour-popup p::-webkit-scrollbar {
+          width: 4px;
+        }
+
+        .tour-popup p::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 3px;
+        }
+
+        .tour-popup p::-webkit-scrollbar-thumb {
+          background: #c1c1c1;
+          border-radius: 3px;
+        }
+
+        .tour-popup p::-webkit-scrollbar-thumb:hover {
+          background: #a8a8a8;
+        }
+
+        .tour-popup-buttons {
+          display: flex;
+          justify-content: space-between;
+          gap: 10px;
+          margin-bottom: 8px;
+          flex-shrink: 0;
+        }
+
+        .tour-popup-footer {
+          display: flex;
+          justify-content: center;
+          border-top: 1px solid #e0e0e0;
+          padding-top: 10px;
+          flex-shrink: 0;
+        }
+
+        .tour-popup-btn {
+          padding: 8px 16px;
+          border: none;
+          border-radius: 6px;
+          cursor: pointer;
+          font-weight: 600;
+          transition: all 0.2s;
+          font-size: 0.85rem;
+          min-width: 70px;
+        }
+
+        .tour-popup-btn-primary {
+          background: #990e17;
+          color: white;
+        }
+
+        .tour-popup-btn-secondary {
+          background: #e0e0e0;
+          color: #333;
+        }
+
+        .tour-popup-btn-skip {
+          background: transparent;
+          color: #666;
+          border: none;
+          padding: 5px 10px;
+          cursor: pointer;
+          font-size: 0.8rem;
+          text-decoration: underline;
+        }
+
+        .tour-popup-btn:hover {
+          transform: translateY(-1px);
+        }
+
+        .tour-popup-btn-skip:hover {
+          color: #990e17;
+          background: transparent;
+          transform: none;
+        }
+
+        /* Remove the separate skip button */
+        .tour-skip {
+          display: none;
+        }
+
+        .tour-progress {
+          position: absolute;
+          bottom: 20px;
+          left: 50%;
+          transform: translateX(-50%);
+          color: white;
+          font-size: 0.9rem;
+          z-index: 10001;
+          background: rgba(0, 0, 0, 0.5);
+          padding: 5px 15px;
+          border-radius: 15px;
+        }
+
+        /* NEW: Chatbot Button Styles */
+        .chatbot-btn {
+          position: fixed;
+          bottom: 20px;
+          right: 20px;
+          width: 60px;
+          height: 60px;
+          background: var(--accent);
+          border: none;
+          border-radius: 50%;
+          color: white;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 24px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+          transition: all 0.3s ease;
+          z-index: 1000;
+        }
+
+        .chatbot-btn:hover {
+          background: var(--accent-hover);
+          transform: scale(1.1);
+          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+        }
+
+        /* NEW: Embedded Chatbot Styles */
+        .chatbot-container {
+          position: fixed;
+          bottom: 90px;
+          right: 20px;
+          width: 350px;
+          height: 500px;
+          background: var(--bg);
+          border: 1px solid var(--border);
+          border-radius: 16px;
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+          display: none;
+          flex-direction: column;
+          z-index: 999;
+          overflow: hidden;
+        }
+
+        .chatbot-container.active {
+          display: flex;
+        }
+
+        .chatbot-header {
+          background: rgba(255, 255, 255, 0.1);
+          padding: 15px 20px;
+          text-align: center;
+          border-bottom: 1px solid var(--border);
+          backdrop-filter: blur(10px);
+        }
+
+        .chatbot-header h3 {
+          font-size: 1.1rem;
+          margin-bottom: 5px;
+          color: white;
+        }
+
+        .chatbot-header p {
+          font-size: 0.8rem;
+          opacity: 0.8;
+          margin: 0;
+        }
+
+        .chatbot-close {
+          position: absolute;
+          top: 10px;
+          right: 15px;
+          background: none;
+          border: none;
+          color: white;
+          font-size: 18px;
+          cursor: pointer;
+          padding: 5px;
+        }
+
+        .chat-messages {
+          flex: 1;
+          overflow-y: auto;
+          padding: 15px;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .message {
+          max-width: 85%;
+          padding: 10px 14px;
+          border-radius: 18px;
+          line-height: 1.4;
+          font-size: 0.9rem;
+          animation: fadeIn 0.3s ease-in;
+        }
+
+        .bot-message {
+          background: rgba(255, 255, 255, 0.15);
+          align-self: flex-start;
+          border-bottom-left-radius: 5px;
+        }
+
+        .user-message {
+          background: rgba(153, 14, 23, 0.8);
+          align-self: flex-end;
+          border-bottom-right-radius: 5px;
+        }
+
+        .chat-input-container {
+          padding: 12px 15px;
+          background: rgba(255, 255, 255, 0.1);
+          border-top: 1px solid var(--border);
+          display: flex;
+          gap: 8px;
+          backdrop-filter: blur(10px);
+        }
+
+        .chat-input {
+          flex: 1;
+          padding: 10px 12px;
+          border: none;
+          border-radius: 20px;
+          background: rgba(255, 255, 255, 0.9);
+          color: #391118;
+          font-size: 13px;
+          outline: none;
+        }
+
+        .chat-send-btn {
+          padding: 10px 15px;
+          border: none;
+          border-radius: 20px;
+          background: var(--accent);
+          color: white;
+          cursor: pointer;
+          font-weight: 600;
+          font-size: 13px;
+          transition: background 0.3s ease;
+        }
+
+        .chat-send-btn:hover {
+          background: var(--accent-hover);
+        }
+
+        .quick-actions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+          padding: 10px 15px;
+          background: rgba(255, 255, 255, 0.05);
+          border-bottom: 1px solid var(--border);
+        }
+
+        .quick-action-btn {
+          padding: 6px 10px;
+          border: 1px solid rgba(255, 255, 255, 0.3);
+          border-radius: 12px;
+          background: rgba(255, 255, 255, 0.1);
+          color: white;
+          cursor: pointer;
+          font-size: 11px;
+          transition: all 0.3s ease;
+        }
+
+        .quick-action-btn:hover {
+          background: rgba(255, 255, 255, 0.2);
+          transform: translateY(-1px);
+        }
+
+        .typing-indicator {
+          display: none;
+          align-self: flex-start;
+          background: rgba(255, 255, 255, 0.15);
+          padding: 10px 14px;
+          border-radius: 18px;
+          border-bottom-left-radius: 5px;
+        }
+
+        .typing-dots {
+          display: flex;
+          gap: 4px;
+        }
+
+        .typing-dot {
+          width: 6px;
+          height: 6px;
+          background: rgba(255, 255, 255, 0.6);
+          border-radius: 50%;
+          animation: typing 1.4s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        .suggestion-chips {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+          margin-top: 8px;
+        }
+
+        .suggestion-chip {
+          padding: 4px 8px;
+          background: rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.3);
+          border-radius: 12px;
+          font-size: 10px;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+
+        .suggestion-chip:hover {
+          background: rgba(255, 255, 255, 0.2);
+        }
+
+        @keyframes typing {
+          0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+          40% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive tour styles */
+        @media (max-height: 600px) {
+          .tour-popup {
+            max-height: 80vh;
+            padding: 15px;
+          }
+          
+          .tour-popup p {
+            max-height: 80px;
+            font-size: 0.8rem;
+          }
+          
+          .tour-popup h3 {
+            font-size: 1rem;
+            margin-bottom: 8px;
+          }
+          
+          .tour-popup-btn {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+          }
+        }
+
+        @media (max-width: 720px) {
+          .nav-menu {
+            position: relative;
+            top: auto;
+            right: auto;
+            margin-bottom: 15px;
+            align-self: flex-end;
+          }
+          .chatbot-btn {
+            bottom: 15px;
+            right: 15px;
+            width: 50px;
+            height: 50px;
+            font-size: 20px;
+          }
+          .chatbot-container {
+            width: 320px;
+            height: 450px;
+            right: 15px;
+            bottom: 80px;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .tour-popup {
+            max-width: 250px;
+            min-width: 220px;
+            padding: 15px;
+          }
+          
+          .tour-popup h3 {
+            font-size: 1rem;
+          }
+          
+          .tour-popup p {
+            font-size: 0.8rem;
+            max-height: 100px;
+          }
+        }
+    </style>
+</head>
+<body>
+    <!-- Background Image Overlay -->
+    <div class="background-overlay"></div>
+    
+    <!-- Tour Elements -->
+    <div class="tour-overlay" id="tourOverlay"></div>
+    <div class="tour-highlight" id="tourHighlight"></div>
+    <div class="tour-popup" id="tourPopup">
+      <h3 id="tourTitle">Route Navigation</h3>
+      <p id="tourDescription">Let's explore the route navigation features.</p>
+      <div class="tour-popup-buttons">
+        <button class="tour-popup-btn tour-popup-btn-secondary" id="tourPrev">Previous</button>
+        <button class="tour-popup-btn tour-popup-btn-primary" id="tourNext">Next</button>
+      </div>
+      <div class="tour-popup-footer">
+        <button class="tour-popup-btn-skip" id="tourSkip">Skip Tour</button>
+      </div>
+    </div>
+    <div class="tour-progress" id="tourProgress">Step 1 of 6</div>
+    
+    <!-- Replace the existing chatbot container in route.html with this AI-enhanced version -->
+<div class="chatbot-container" id="chatbotContainer">
+  <div class="chatbot-header">
+    <button class="chatbot-close" id="chatbotClose">×</button>
+    <h3>🤖 AI Campus Assistant</h3>
+    <p>Powered by Machine Learning - Ask me anything!</p>
+  </div>
+  
+  <div class="quick-actions">
+    <button class="quick-action-btn" onclick="sendQuickMessage('Where is the library?')">📍 Library</button>
+    <button class="quick-action-btn" onclick="sendQuickMessage('How to find a classroom?')">🏫 Classrooms</button>
+    <button class="quick-action-btn" onclick="sendQuickMessage('Where are the labs located?')">🔬 Laboratories</button>
+    <button class="quick-action-btn" onclick="sendQuickMessage('Canteen location?')">🍽️ Canteen</button>
+    <button class="quick-action-btn" onclick="sendQuickMessage('Staff rooms?')">👨‍🏫 Staff Rooms</button>
+    <button class="quick-action-btn" onclick="sendQuickMessage('Navigation help')">🗺️ Navigation</button>
+  </div>
+
+  <div class="chat-messages" id="chatMessages">
+    <div class="message bot-message">
+      <strong>🤖 AI Assistant:</strong> Hello! I'm your AI-powered Campus Assistant with machine learning capabilities. I can help you with:
+      <div class="suggestion-chips">
+        <div class="suggestion-chip" onclick="sendQuickMessage('Room locations')">📍 Room locations</div>
+        <div class="suggestion-chip" onclick="sendQuickMessage('Navigation between floors')">🏢 Floor navigation</div>
+        <div class="suggestion-chip" onclick="sendQuickMessage('Department information')">📚 Departments</div>
+        <div class="suggestion-chip" onclick="sendQuickMessage('Campus facilities')">🏛️ Campus facilities</div>
+      </div>
+      What would you like to know about MLACW campus?
+    </div>
+    
+    <div class="typing-indicator" id="typingIndicator">
+      <div class="typing-dots">
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+      </div>
+      <span style="margin-left: 10px; font-size: 12px;">AI is thinking...</span>
+    </div>
+  </div>
+
+  <div class="chat-input-container">
+    <input type="text" class="chat-input" id="chatInput" placeholder="Ask AI about campus..." onkeypress="handleChatKeyPress(event)">
+    <button class="chat-send-btn" onclick="sendChatMessage()">Send</button>
+  </div>
+</div>
+
+    <!-- Chatbot Button -->
+    <button class="chatbot-btn" id="chatbotBtn" title="Campus Assistant">
+      💬
+    </button>
+    
+    <!-- NEW: Navigation Menu -->
+    <div class="nav-menu">
+      <div class="nav-btn" id="navBtn">
+        <span>☰</span>
+      </div>
+      <div class="nav-dropdown" id="navDropdown">
+        <div class="nav-option" id="profileBtn">
+          <span class="nav-icon">👤</span>
+          <span data-i18n="profile">Profile</span>
+        </div>
+        <div class="nav-option" id="dashboardBtn">
+          <span class="nav-icon">📊</span>
+          <span data-i18n="dashboard">Dashboard</span>
+        </div>
+        <div class="nav-option" id="front1Btn">
+          <span class="nav-icon">🏠</span>
+          <span data-i18n="home">Home</span>
+        </div>
+        <!-- Language Selector integrated into nav menu -->
+        <div class="nav-option" id="languageBtn">
+          <span class="nav-icon">🌐</span>
+          <span id="currentLanguage">English</span>
+        </div>
+        <div class="language-dropdown" id="languageDropdown">
+          <div class="nav-option" data-lang="en">🌐 English</div>
+          <div class="nav-option" data-lang="hi">🌐 हिन्दी (Hindi)</div>
+          <div class="nav-option" data-lang="kn">🌐 ಕನ್ನಡ (Kannada)</div>
+          <div class="nav-option" data-lang="ta">🌐 தமிழ் (Tamil)</div>
+          <div class="nav-option" data-lang="te">🌐 తెలుగు (Telugu)</div>
+        </div>
+      </div>
+    </div>
+    
+    <a href="{{ url_for('front1') }}" class="backBtn" data-i18n="back_to_search">← Back to Search</a>
+    
+    <div class="container">
+        <!-- Logo Container - Added above route header -->
+        <div class="logo-container">
+            <img src="{{ url_for('static', filename='mLACLogo.png') }}" alt="MLAC Logo" class="logo">
+        </div>
+        
+        <div class="route-header">
+            <h1 data-i18n="app_title">CAMAP-Campus Navigation</h1>
+            <div class="route-info" id="routeInfo">
+                <span data-i18n="route_from">Route from</span> <span id="startLabel">Loading...</span> <span data-i18n="route_to">to</span> <span id="endLabel">Loading...</span>
+            </div>
+        </div>
+
+        <div id="errorContainer" style="display: none;" class="error-message">
+            <strong data-i18n="error">Error:</strong> <span id="errorText"></span>
+        </div>
+
+        <!-- Add ID for tour step 2 -->
+        <div class="controls-card" id="controls-card">
+            <div class="info-item">
+                <span class="label" data-i18n="start">Start</span>
+                <span class="value" id="startValue">Loading...</span>
+            </div>
+            <div class="info-item">
+                <span class="label" data-i18n="destination">Destination</span>
+                <span class="value" id="endValue">Loading...</span>
+            </div>
+            <div class="info-item">
+                <span class="label" data-i18n="distance">Distance</span>
+                <span class="value" id="distanceValue" data-i18n="calculating">Calculating...</span>
+            </div>
+            <div class="info-item">
+                <span class="label" data-i18n="time_approx">Time (Approx)</span>
+                <span class="value" id="timeValue" data-i18n="calculating">Calculating...</span>
+            </div>
+            <div class="info-item">
+                <span class="label" data-i18n="steps">Steps</span>
+                <span class="value" id="stepsValue" data-i18n="calculating">Calculating...</span>
+            </div>
+        </div>
+
+        <div class="map-area">
+            <div class="map-card">
+                <h3 data-i18n="shortest_path_map">Shortest Path Map</h3>
+                <!-- Add ID for tour step 4 -->
+                <div class="floor-buttons" id="floor-buttons">
+                    <button class="floor-btn active" data-floor="ground" data-i18n="ground_floor">Ground Floor</button>
+                    <button class="floor-btn" data-floor="first" data-i18n="first_floor">First Floor</button>
+                    <button class="floor-btn" data-floor="second" data-i18n="second_floor">Second Floor</button>
+                    <button class="floor-btn" data-floor="third" data-i18n="third_floor">Third Floor</button>
+                </div>
+                <canvas id="mapCanvas" width="1200" height="800"></canvas>
+                <div class="legend">
+                    <div class="legend-item"><div class="swatch swatch-start"></div> <span data-i18n="start">Start</span></div>
+                    <div class="legend-item"><div class="swatch swatch-end"></div> <span data-i18n="end">End</span></div>
+                    <div class="legend-item"><div class="swatch swatch-path"></div> <span data-i18n="path">Path</span></div>
+                    <div class="legend-item"><div class="swatch swatch-classroom"></div> <span data-i18n="classroom">Classroom</span></div>
+                    <div class="legend-item"><div class="swatch swatch-lab"></div> <span data-i18n="lab">Lab</span></div>
+                    <div class="legend-item"><div class="swatch swatch-department"></div> <span data-i18n="department">Department</span></div>
+                    <div class="legend-item"><div class="swatch swatch-stairs"></div> <span data-i18n="stairs">Stairs</span></div>
+                </div>
+                <div id="mapControls">
+                    <button class="map-control-btn" id="zoomIn">+</button>
+                    <button class="map-control-btn" id="zoomOut">-</button>
+                    <button class="map-control-btn" id="resetView">↺</button>
+                </div>
+            </div>
+
+            <div class="route-info-card">
+                <h3 data-i18n="route_instructions">Route Instructions</h3>
+                <div class="directions-container">
+                    <div class="directions-list" id="directionsList">
+                        <div class="direction-step">
+                            <div class="step-number">1</div>
+                            <div class="step-instruction" data-i18n="calculating_route">Calculating route...</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Add ID for tour step 6 -->
+                <div class="voice-controls" id="voice-controls">
+                    <button class="btn btn-primary" id="startVoiceGuidance">
+                        <span class="loading" style="display: none;"></span>
+                        <span data-i18n="start_voice_guidance">Start Voice Guidance</span>
+                    </button>
+                    <button class="btn btn-danger" id="stopVoiceGuidance" disabled>
+                        <span data-i18n="stop_guidance">Stop Guidance</span>
+                    </button>
+                </div>
+                
+                <div class="emergency-section">
+                    <button id="emergencyButton">🚨 <span data-i18n="emergency_assistance">Emergency Assistance</span></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Node Info Box -->
+        <div id="nodeInfoBox">
+            <div class="info-header">
+                <span id="nodeInfoTitle" data-i18n="node_information">Node Information</span>
+                <button class="info-close" id="nodeInfoClose">×</button>
+            </div>
+            <div class="info-body" id="nodeInfoBody">
+                <span data-i18n="click_node_info">Click on any node to see details</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Emergency Modal -->
+    <div class="modal" id="emergencyModal">
+        <div class="modal-content">
+            <h3>🚨 <span data-i18n="emergency_assistance">Emergency Assistance</span></h3>
+            <p data-i18n="emergency_help_message">Help is on the way! Your location has been shared with campus security.</p>
+            <p><strong data-i18n="stay_calm_message">Stay calm and stay where you are.</strong></p>
+            <div class="modal-buttons">
+                <button class="btn btn-danger" id="confirmEmergency" data-i18n="confirm_emergency">Confirm Emergency</button>
+                <button class="btn btn-primary" id="cancelEmergency" data-i18n="cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script src="{{ url_for('static', filename='path_renderer.js') }}"></script>
+    <script>
+    // Language support for route page
+    const routeTranslations = {
+      'en': {
+        'route_page_title': 'Route | CAMAP',
+        'back_to_search': '← Back to Search',
+        'app_title': 'CAMAP-Campus Navigation',
+        'route_from': 'Route from',
+        'route_to': 'to',
+        'error': 'Error:',
+        'start': 'Start',
+        'destination': 'Destination',
+        'distance': 'Distance',
+        'time_approx': 'Time (Approx)',
+        'steps': 'Steps',
+        'calculating': 'Calculating...',
+        'shortest_path_map': 'Shortest Path Map',
+        'ground_floor': 'Ground Floor',
+        'first_floor': 'First Floor',
+        'second_floor': 'Second Floor',
+        'third_floor': 'Third Floor',
+        'path': 'Path',
+        'end': 'End',
+        'classroom': 'Classroom',
+        'lab': 'Lab',
+        'department': 'Department',
+        'stairs': 'Stairs',
+        'route_instructions': 'Route Instructions',
+        'calculating_route': 'Calculating route...',
+        'start_voice_guidance': 'Start Voice Guidance',
+        'stop_guidance': 'Stop Guidance',
+        'emergency_assistance': 'Emergency Assistance',
+        'node_information': 'Node Information',
+        'click_node_info': 'Click on any node to see details',
+        'emergency_help_message': 'Help is on the way! Your location has been shared with campus security.',
+        'stay_calm_message': 'Stay calm and stay where you are.',
+        'confirm_emergency': 'Confirm Emergency',
+        'cancel': 'Cancel',
+        'move_to': 'Move to',
+        'no_route_found': 'No route found',
+        'error_calculating_route': 'Error calculating route. Please try again.',
+        'profile': 'Profile',
+        'dashboard': 'Dashboard',
+        'home': 'Home',
+        'chatbot_title': 'Campus Assistant',
+        'chatbot_description': 'Ask me anything about MLACW campus!',
+        'chatbot_placeholder': 'Type your question...',
+        'chatbot_send': 'Send',
+        'chatbot_library': 'Library',
+        'chatbot_classrooms': 'Classrooms',
+        'chatbot_laboratories': 'Laboratories',
+        'chatbot_canteen': 'Canteen',
+        'chatbot_staff_rooms': 'Staff Rooms',
+        'chatbot_navigation': 'Navigation'
+      },
+      'hi': {
+        'route_page_title': 'रूट | कैमैप',
+        'back_to_search': '← खोज पर वापस',
+        'app_title': 'कैमैप-कैंपस नेविगेशन',
+        'route_from': 'रूट से',
+        'route_to': 'से',
+        'error': 'त्रुटि:',
+        'start': 'प्रारंभ',
+        'destination': 'गंतव्य',
+        'distance': 'दूरी',
+        'time_approx': 'समय (अनुमानित)',
+        'steps': 'चरण',
+        'calculating': 'गणना हो रही है...',
+        'shortest_path_map': 'सबसे छोटा पथ मानचित्र',
+        'ground_floor': 'ग्राउंड फ्लोर',
+        'first_floor': 'पहली मंजिल',
+        'second_floor': 'दूसरी मंजिल',
+        'third_floor': 'तीसरी मंजिल',
+        'path': 'पथ',
+        'end': 'समाप्त',
+        'classroom': 'कक्षा',
+        'lab': 'प्रयोगशाला',
+        'department': 'विभाग',
+        'stairs': 'सीढ़ियाँ',
+        'route_instructions': 'रूट निर्देश',
+        'calculating_route': 'रूट की गणना हो रही है...',
+        'start_voice_guidance': 'वॉइस गाइडेंस शुरू करें',
+        'stop_guidance': 'मार्गदर्शन रोकें',
+        'emergency_assistance': 'आपातकालीन सहायता',
+        'node_information': 'नोड जानकारी',
+        'click_node_info': 'विवरण देखने के लिए किसी भी नोड पर क्लिक करें',
+        'emergency_help_message': 'मदद रास्ते में है! आपका स्थान कैंपस सुरक्षा के साथ साझा किया गया है।',
+        'stay_calm_message': 'शांत रहें और जहां हैं वहीं रहें।',
+        'confirm_emergency': 'आपातकाल की पुष्टि करें',
+        'cancel': 'रद्द करें',
+        'move_to': 'स्थानांतरित करें',
+        'no_route_found': 'कोई रूट नहीं मिला',
+        'error_calculating_route': 'रूट गणना में त्रुटि। कृपया पुनः प्रयास करें।',
+        'profile': 'प्रोफाइल',
+        'dashboard': 'डैशबोर्ड',
+        'home': 'होम',
+        'chatbot_title': 'कैंपस असिस्टेंट',
+        'chatbot_description': 'MLACW कैंपस के बारे में कुछ भी पूछें!',
+        'chatbot_placeholder': 'अपना प्रश्न लिखें...',
+        'chatbot_send': 'भेजें',
+        'chatbot_library': 'लाइब्रेरी',
+        'chatbot_classrooms': 'कक्षाएं',
+        'chatbot_laboratories': 'प्रयोगशालाएं',
+        'chatbot_canteen': 'कैंटीन',
+        'chatbot_staff_rooms': 'स्टाफ रूम',
+        'chatbot_navigation': 'नेविगेशन'
+      },
+      'kn': {
+        'route_page_title': 'ಮಾರ್ಗ | ಕೆಮ್ಯಾಪ್',
+        'back_to_search': '← ಹುಡುಕಾಟಕ್ಕೆ ಹಿಂತಿರುಗಿ',
+        'app_title': 'ಕೆಮ್ಯಾಪ್-ಕ್ಯಾಂಪಸ್ ನ್ಯಾವಿಗೇಶನ್',
+        'route_from': 'ಮಾರ್ಗ',
+        'route_to': 'ಇಂದ',
+        'error': 'ದೋಷ:',
+        'start': 'ಪ್ರಾರಂಭ',
+        'destination': 'ಗಮ್ಯಸ್ಥಾನ',
+        'distance': 'ದೂರ',
+        'time_approx': 'ಸಮಯ (ಅಂದಾಜು)',
+        'steps': 'ಹಂತಗಳು',
+        'calculating': 'ಲೆಕ್ಕಾಚಾರ ಮಾಡಲಾಗುತ್ತಿದೆ...',
+        'shortest_path_map': 'ಕಿರಿದಾದ ಮಾರ್ಗ ನಕ್ಷೆ',
+        'ground_floor': 'ಗ್ರೌಂಡ್ ಫ್ಲೋರ್',
+        'first_floor': 'ಮೊದಲ ಮಹಡಿ',
+        'second_floor': 'ಎರಡನೇ ಮಹಡಿ',
+        'third_floor': 'ಮೂರನೇ ಮಹಡಿ',
+        'path': 'ಮಾರ್ಗ',
+        'end': 'ಅಂತ್ಯ',
+        'classroom': 'ತರಗತಿ ಕೊಠಡಿ',
+        'lab': 'ಲ್ಯಾಬ್',
+        'department': 'ವಿಭಾಗ',
+        'stairs': 'ಮೆಟ್ಟಿಲುಗಳು',
+        'route_instructions': 'ಮಾರ್ಗ ಸೂಚನೆಗಳು',
+        'calculating_route': 'ಮಾರ್ಗ ಲೆಕ್ಕಾಚಾರ ಮಾಡಲಾಗುತ್ತಿದೆ...',
+        'start_voice_guidance': 'ವಾಯ್ಸ್ ಮಾರ್ಗದರ್ಶನ ಪ್ರಾರಂಭಿಸಿ',
+        'stop_guidance': 'ಮಾರ್ಗದರ್ಶನ ನಿಲ್ಲಿಸಿ',
+        'emergency_assistance': 'ತುರ್ತು ಸಹಾಯ',
+        'node_information': 'ನೋಡ್ ಮಾಹಿತಿ',
+        'click_node_info': 'ವಿವರಗಳನ್ನು ನೋಡಲು ಯಾವುದೇ ನೋಡ್ ಅನ್ನು ಕ್ಲಿಕ್ ಮಾಡಿ',
+        'emergency_help_message': 'ಸಹಾಯ ಬರುತ್ತಿದೆ! ನಿಮ್ಮ ಸ್ಥಳವನ್ನು ಕ್ಯಾಂಪಸ್ ಭದ್ರತೆಗೆ ಹಂಚಲಾಗಿದೆ.',
+        'stay_calm_message': 'ಶಾಂತವಾಗಿರಿ ಮತ್ತು ನೀವು ಇರುವ ಸ್ಥಳದಲ್ಲೇ ಇರಿ.',
+        'confirm_emergency': 'ತುರ್ತು ಪರಿಸ್ಥಿತಿಯನ್ನು ದೃಢೀಕರಿಸಿ',
+        'cancel': 'ರದ್ದುಮಾಡಿ',
+        'move_to': 'ಸ್ಥಳಾಂತರಿಸಿ',
+        'no_route_found': 'ಯಾವುದೇ ಮಾರ್ಗ ಕಂಡುಬಂದಿಲ್ಲ',
+        'error_calculating_route': 'ಮಾರ್ಗ ಲೆಕ್ಕಾಚಾರದಲ್ಲಿ ದೋಷ। ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.',
+        'profile': 'ಪ್ರೊಫೈಲ್',
+        'dashboard': 'ಡ್ಯಾಶ್‌ಬೋರ್ಡ್',
+        'home': 'ಹೋಮ್',
+        'chatbot_title': 'ಕ್ಯಾಂಪಸ್ ಅಸಿಸ್ಟೆಂಟ್',
+        'chatbot_description': 'MLACW ಕ್ಯಾಂಪಸ್ ಬಗ್ಗೆ ಏನಾದರೂ ಕೇಳಿ!',
+        'chatbot_placeholder': 'ನಿಮ್ಮ ಪ್ರಶ್ನೆಯನ್ನು ಟೈಪ್ ಮಾಡಿ...',
+        'chatbot_send': 'ಕಳುಹಿಸಿ',
+        'chatbot_library': 'ಲೈಬ್ರರಿ',
+        'chatbot_classrooms': 'ತರಗತಿ ಕೊಠಡಿಗಳು',
+        'chatbot_laboratories': 'ಲ್ಯಾಬೊರೇಟರಿಗಳು',
+        'chatbot_canteen': 'ಕ್ಯಾಂಟೀನ್',
+        'chatbot_staff_rooms': 'ಸ್ಟಾಫ್ ರೂಮ್ಗಳು',
+        'chatbot_navigation': 'ನ್ಯಾವಿಗೇಶನ್'
+      },
+      'ta': {
+        'route_page_title': 'பாதை | கேமாப்',
+        'back_to_search': '← தேடலுக்குத் திரும்பு',
+        'app_title': 'கேமாப்-கேம்பஸ் நேவிகேஷன்',
+        'route_from': 'பாதை',
+        'route_to': 'இலிருந்து',
+        'error': 'பிழை:',
+        'start': 'தொடக்கம்',
+        'destination': 'சேரும் இடம்',
+        'distance': 'தூரம்',
+        'time_approx': 'நேரம் (தோராயமான)',
+        'steps': 'படிகள்',
+        'calculating': 'கணக்கிடப்படுகிறது...',
+        'shortest_path_map': 'குறுகிய பாதை வரைபடம்',
+        'ground_floor': 'தரை தளம்',
+        'first_floor': 'முதல் தளம்',
+        'second_floor': 'இரண்டாம் தளம்',
+        'third_floor': 'மூன்றாம் தளம்',
+        'path': 'பாதை',
+        'end': 'முடிவு',
+        'classroom': 'வகுப்பறை',
+        'lab': 'ஆய்வகம்',
+        'department': 'துறை',
+        'stairs': 'படிக்கட்டுகள்',
+        'route_instructions': 'பாதை வழிமுறைகள்',
+        'calculating_route': 'பாதை கணக்கிடப்படுகிறது...',
+        'start_voice_guidance': 'குரல் வழிகாட்டுதலைத் தொடங்கவும்',
+        'stop_guidance': 'வழிகாட்டுதலை நிறுத்து',
+        'emergency_assistance': 'அவசர உதவி',
+        'node_information': 'நோட் தகவல்',
+        'click_node_info': 'விவரங்களைப் பார்க்க எந்த நோடையும் கிளிக் செய்யவும்',
+        'emergency_help_message': 'உதவி வழியில் உள்ளது! உங்கள் இருப்பிடம் கேம்பஸ் பாதுகாப்புடன் பகிரப்பட்டது.',
+        'stay_calm_message': 'அமைதியாக இருந்து, நீங்கள் இருக்கும் இடத்திலேயே இருங்கள்.',
+        'confirm_emergency': 'அவசரநிலையை உறுதிப்படுத்தவும்',
+        'cancel': 'ரத்துசெய்',
+        'move_to': 'நகர்த்து',
+        'no_route_found': 'பாதை எதுவும் கிடைக்கவில்லை',
+        'error_calculating_route': 'பாதை கணக்கிடுவதில் பிழை. தயவு செய்து மீண்டும் முயற்சிக்கவும்.',
+        'profile': 'சுயவிவரம்',
+        'dashboard': 'டாஷ்போர்டு',
+        'home': 'முகப்பு',
+        'chatbot_title': 'கேம்பஸ் உதவியாளர்',
+        'chatbot_description': 'MLACW கேம்பஸ் பற்றி எதையும் கேளுங்கள்!',
+        'chatbot_placeholder': 'உங்கள் கேள்வியை தட்டச்சு செய்யவும்...',
+        'chatbot_send': 'அனுப்பு',
+        'chatbot_library': 'நூலகம்',
+        'chatbot_classrooms': 'வகுப்பறைகள்',
+        'chatbot_laboratories': 'ஆய்வகங்கள்',
+        'chatbot_canteen': 'கேன்டீன்',
+        'chatbot_staff_rooms': 'ஊழியர் அறைகள்',
+        'chatbot_navigation': 'வழிசெலுத்தல்'
+      },
+      'te': {
+        'route_page_title': 'మార్గం | కేమాప్',
+        'back_to_search': '← శోధనకు తిరిగి వెళ్ళండి',
+        'app_title': 'కేమాప్-క్యాంపస్ నావిగేషన్',
+        'route_from': 'మార్గం',
+        'route_to': 'నుండి',
+        'error': 'లోపం:',
+        'start': 'ప్రారంభం',
+        'destination': 'గమ్యస్థానం',
+        'distance': 'దూరం',
+        'time_approx': 'సమయం (సుమారుగా)',
+        'steps': 'దశలు',
+        'calculating': 'లెక్కించబడుతోంది...',
+        'shortest_path_map': 'చిన్న మార్గం మ్యాప్',
+        'ground_floor': 'గ్రౌండ్ ఫ్లోర్',
+        'first_floor': 'మొదటి అంతస్తు',
+        'second_floor': 'రెండవ అంతస్తు',
+        'third_floor': 'మూడవ అంతస్తు',
+        'path': 'మార్గం',
+        'end': 'ముగింపు',
+        'classroom': 'తరగతి గది',
+        'lab': 'ల్యాబ్',
+        'department': 'విభాగం',
+        'stairs': 'మెట్లు',
+        'route_instructions': 'మార్గం సూచనలు',
+        'calculating_route': 'మార్గం లెక్కించబడుతోంది...',
+        'start_voice_guidance': 'వాయిస్ గైడెన్స్ ప్రారంభించండి',
+        'stop_guidance': 'గైడెన్స్ ఆపండి',
+        'emergency_assistance': 'అత్యవసర సహాయం',
+        'node_information': 'నోడ్ సమాచారం',
+        'click_node_info': 'వివరాలను చూడటానికి ఏదైనా నోడ్ పై క్లిక్ చేయండి',
+        'emergency_help_message': 'సహాయం దారిలో ఉంది! మీ స్థానం క్యాంపస్ భద్రతతో భాగస్వామ్యం చేయబడింది.',
+        'stay_calm_message': 'శాంతంగా ఉండండి మరియు మీరు ఉన్న చోటనే ఉండండి.',
+        'confirm_emergency': 'అత్యవసర స్థితిని నిర్ధారించండి',
+        'cancel': 'రద్దు చేయండి',
+        'move_to': 'తరలించు',
+        'no_route_found': 'మార్గం ఏమీ లేదు',
+        'error_calculating_route': 'మార్గం లెక్కించడంలో లోపం. దయచేసి మళ్లీ ప్రయత్నించండి.',
+        'profile': 'ప్రొఫైల్',
+        'dashboard': 'డాష్‌బోర్డ్',
+        'home': 'హోమ్',
+        'chatbot_title': 'క్యాంపస్ అసిస్టెంట్',
+        'chatbot_description': 'MLACW క్యాంపస్ గురించి ఏదైనా అడగండి!',
+        'chatbot_placeholder': 'మీ ప్రశ్నను టైప్ చేయండి...',
+        'chatbot_send': 'పంపండి',
+        'chatbot_library': 'లైబ్రరీ',
+        'chatbot_classrooms': 'తరగతి గదులు',
+        'chatbot_laboratories': 'ల్యాబొరేటరీలు',
+        'chatbot_canteen': 'క్యాంటీన్',
+        'chatbot_staff_rooms': 'స్టాఫ్ రూమ్స్',
+        'chatbot_navigation': 'నావిగేషన్'
+      }
+    };
+
+    let currentLanguage = 'en';
+
+    // Language functions
+    function setLanguage(lang) {
+      currentLanguage = lang;
+      document.getElementById('currentLanguage').textContent = routeTranslations[lang].app_title.split('-')[0];
+      applyRouteTranslations(lang);
+      saveLanguagePreference(lang);
+      
+      // Send language preference to server
+      fetch('/set-language', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ language: lang })
+      });
+    }
+
+    function applyRouteTranslations(lang) {
+      const trans = routeTranslations[lang];
+      
+      // Update all elements with data-i18n attribute
+      document.querySelectorAll('[data-i18n]').forEach(element => {
+        const key = element.getAttribute('data-i18n');
+        if (trans[key]) {
+          element.textContent = trans[key];
+        }
+      });
+      
+      // Update page title
+      document.title = trans.route_page_title;
+    }
+
+    function saveLanguagePreference(lang) {
+      localStorage.setItem('preferredLanguage', lang);
+    }
+
+    function loadLanguagePreference() {
+      const savedLang = localStorage.getItem('preferredLanguage');
+      if (savedLang && routeTranslations[savedLang]) {
+        return savedLang;
+      }
+      return 'en';
+    }
+
+    // NEW: Embedded Chatbot functionality
+    const chatbotContainer = document.getElementById('chatbotContainer');
+    const chatbotBtn = document.getElementById('chatbotBtn');
+    const chatbotClose = document.getElementById('chatbotClose');
+    const chatMessages = document.getElementById('chatMessages');
+    const chatInput = document.getElementById('chatInput');
+    const typingIndicator = document.getElementById('typingIndicator');
+
+    // Campus knowledge base
+    const campusKnowledge = {
+      'library': 'The main library is located on the Ground Floor near the Reception area. It has reading rooms, reprographic services, and internet facilities.',
+      'canteen': 'The main canteen is on the Ground Floor near Bun World. It\'s a great place to take a break and grab some food.',
+      'classroom': 'Classrooms are spread across all floors: G1-G11 on Ground Floor, F1-F5 on First Floor, S1-S12 on Second Floor.',
+      'laboratory': 'Labs are mainly on First and Third Floors. Chemistry and Physics labs on First Floor, Business and Research labs on Third Floor.',
+      'staff room': 'Staff Room 1 is on First Floor near F3 and F4 classrooms. Staff Room 2 is also on First Floor near Chemistry Department.',
+      'navigation': 'Use the navigation system to find the shortest path between any two locations. Select start and end points to get directions.',
+      'floor': 'The campus has 4 floors: Ground (G), First (F), Second (S), and Third (T) floors connected by stairs and elevators.',
+      'department': 'Key departments: Chemistry (1st Floor), Botany (1st Floor), Commerce (2nd Floor), Management (2nd Floor), Journalism (1st Floor).',
+      'reception': 'Reception is on Ground Floor near the main entrance. It\'s your first stop for general inquiries.',
+      'principal': 'Degree Principal Room and PUC Principal Room are both on Ground Floor near the Office Room.',
+      'washroom': 'Ladies toilets on each floor: Ground (near Gym), First (near Chemistry), Second (near Common Room). Mens toilet on Ground Floor.',
+      'gym': 'Department of Physical Education (Gym) is on Ground Floor near G8 classroom.',
+      'help': 'I can help you with room locations, navigation between floors, department information, and campus facilities. What specific help do you need?',
+      'hello': 'Hello! Welcome to MLACW Campus Assistant. How can I help you navigate our campus today?',
+      'hi': 'Hi there! I\'m here to help you find your way around MLACW campus. What would you like to know?'
+    };
+
+    // Default responses for unknown queries
+    const defaultResponses = [
+      "I'm not sure about that. Could you try asking about room locations, departments, or campus navigation?",
+      "I specialize in campus navigation. Try asking about specific rooms, floors, or departments.",
+      "That's beyond my campus navigation knowledge. I can help you find rooms, labs, offices, or departments.",
+      "I'm designed to help with campus navigation. Ask me about locations, directions, or facilities."
+    ];
+
+    // Chatbot functions
+    function toggleChatbot() {
+      chatbotContainer.classList.toggle('active');
+      if (chatbotContainer.classList.contains('active')) {
+        chatInput.focus();
+      }
+    }
+
+    function closeChatbot() {
+      chatbotContainer.classList.remove('active');
+    }
+
+    function sendChatMessage() {
+      const message = chatInput.value.trim();
+      if (message === '') return;
+
+      // Add user message to chat
+      addChatMessage(message, 'user');
+      chatInput.value = '';
+
+      // Show typing indicator
+      showTypingIndicator();
+
+      // Simulate bot thinking time
+      setTimeout(() => {
+        hideTypingIndicator();
+        const response = generateChatResponse(message);
+        addChatMessage(response, 'bot');
+      }, 1000 + Math.random() * 1000);
+    }
+
+    function sendQuickMessage(message) {
+      addChatMessage(message, 'user');
+      
+      // Show typing indicator
+      showTypingIndicator();
+
+      // Simulate bot thinking time
+      setTimeout(() => {
+        hideTypingIndicator();
+        const response = generateChatResponse(message);
+        addChatMessage(response, 'bot');
+      }, 1000 + Math.random() * 1000);
+    }
+
+    function handleChatKeyPress(event) {
+      if (event.key === 'Enter') {
+        sendChatMessage();
+      }
+    }
+
+    function addChatMessage(text, sender) {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${sender}-message`;
+      messageDiv.textContent = text;
+      chatMessages.appendChild(messageDiv);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function showTypingIndicator() {
+      typingIndicator.style.display = 'block';
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function hideTypingIndicator() {
+      typingIndicator.style.display = 'none';
+    }
+
+    function generateChatResponse(userMessage) {
+      const lowerMessage = userMessage.toLowerCase();
+      
+      // Check for exact matches in knowledge base
+      for (const [key, response] of Object.entries(campusKnowledge)) {
+        if (lowerMessage.includes(key)) {
+          return response;
+        }
+      }
+
+      // Check for related terms
+      if (lowerMessage.includes('where') || lowerMessage.includes('location')) {
+        return "I can help you find locations! Try asking about specific rooms like 'library', 'canteen', 'lab', or 'classroom'.";
+      }
+      
+      if (lowerMessage.includes('how to find') || lowerMessage.includes('direction')) {
+        return "Use the navigation system on this page to find the shortest path between any two locations on campus.";
+      }
+      
+      if (lowerMessage.includes('floor') || lowerMessage.includes('level')) {
+        return "The campus has 4 floors: Ground (G), First (F), Second (S), and Third (T). Each floor has different facilities and departments.";
+      }
+
+      // Return random default response
+      return defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
+    }
+
+    // Tour functionality for route page
+    let currentTourStep = 0;
+    let tourStarted = false;
+
+    const tourSteps = [
+      {
+        title: "Route Navigation",
+        description: "Welcome to the route navigation page! Let's explore the features available here.",
+        element: null,
+        position: "center"
+      },
+      {
+        title: "Route Information",
+        description: "Here you can see detailed information about your route including distance, time, and steps.",
+        element: "controls-card",
+        position: "bottom"
+      },
+      {
+        title: "Interactive Map",
+        description: "This interactive map shows your route across different floors. You can zoom, pan, and switch between floors.",
+        element: "mapCanvas",
+        position: "left"
+      },
+      {
+        title: "Floor Navigation",
+        description: "Switch between different floors to see the route on each level of the building.",
+        element: "floor-buttons",
+        position: "bottom"
+      },
+      {
+        title: "Step-by-Step Directions",
+        description: "Follow these detailed instructions to navigate your route. Each step guides you to your destination.",
+        element: "directionsList",
+        position: "right"
+      },
+      {
+        title: "Voice Guidance & Emergency",
+        description: "Use voice guidance for hands-free navigation and emergency assistance if needed.",
+        element: "voice-controls",
+        position: "top"
+      }
+    ];
+
+       function startTour() {
+      // Check if user has seen the tour before in localStorage
+      const hasSeenTour = localStorage.getItem('hasSeenRouteTour');
+      if (hasSeenTour) {
+        return; // Don't show tour if already seen in this browser
+      }
+
+      // Check if user exists in database (returning user)
+      fetch('/check-user-exists')
+        .then(response => response.json())
+        .then(data => {
+          if (data.user_exists) {
+            // User exists in database (returning user), don't show tour
+            console.log('Returning user detected, skipping tour');
+            localStorage.setItem('hasSeenRouteTour', 'true'); // Remember not to show again
+            return;
+          }
+          
+          // User doesn't exist in database (new user), show tour
+          console.log('New user detected, showing tour');
+          tourStarted = true;
+          currentTourStep = 0;
+          
+          // Show tour elements
+          document.getElementById('tourOverlay').style.display = 'block';
+          document.getElementById('tourPopup').style.display = 'block';
+          document.getElementById('tourProgress').style.display = 'block';
+          
+          showTourStep(currentTourStep);
+        })
+        .catch(error => {
+          console.error('Error checking user existence:', error);
+          // If there's an error, don't show the tour to be safe
+        });
+    }
+
+    function showTourStep(stepIndex) {
+      const step = tourSteps[stepIndex];
+      
+      // Update progress
+      document.getElementById('tourProgress').textContent = `Step ${stepIndex + 1} of ${tourSteps.length}`;
+      
+      // Update popup content
+      document.getElementById('tourTitle').textContent = step.title;
+      document.getElementById('tourDescription').textContent = step.description;
+      
+      // Update buttons
+      const prevBtn = document.getElementById('tourPrev');
+      const nextBtn = document.getElementById('tourNext');
+      
+      prevBtn.style.display = stepIndex === 0 ? 'none' : 'inline-block';
+      nextBtn.textContent = stepIndex === tourSteps.length - 1 ? 'Finish' : 'Next';
+      
+      // Position the popup and highlight with scroll-aware positioning
+      if (step.element && document.getElementById(step.element)) {
+        const element = document.getElementById(step.element);
+        
+        // Auto-scroll to element first
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        // Wait for scroll to complete before positioning
+        setTimeout(() => {
+          const rect = element.getBoundingClientRect();
+          const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+          const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+          
+          // Show highlight with scroll offset
+          const highlight = document.getElementById('tourHighlight');
+          highlight.style.width = `${rect.width + 20}px`;
+          highlight.style.height = `${rect.height + 20}px`;
+          highlight.style.left = `${rect.left + scrollX - 10}px`;
+          highlight.style.top = `${rect.top + scrollY - 10}px`;
+          highlight.style.display = 'block';
+          
+          // Position popup with scroll offset
+          positionPopup(step.position, rect, scrollX, scrollY);
+        }, 300); // Delay for smooth scroll completion
+      } else {
+        // Center popup for welcome step
+        document.getElementById('tourHighlight').style.display = 'none';
+        positionPopup('center');
+      }
+    }
+
+    function positionPopup(position, rect = null, scrollX = 0, scrollY = 0) {
+      const popup = document.getElementById('tourPopup');
+      const padding = 20;
+      const viewportPadding = 15;
+      
+      if (position === 'center') {
+        popup.style.left = '50%';
+        popup.style.top = '50%';
+        popup.style.transform = 'translate(-50%, -50%)';
+      } else if (rect) {
+        let left, top;
+        
+        switch(position) {
+          case 'top':
+            left = rect.left + scrollX + rect.width/2;
+            top = rect.top + scrollY - popup.offsetHeight - padding;
+            popup.style.transform = 'translateX(-50%)';
+            break;
+          case 'bottom':
+            left = rect.left + scrollX + rect.width/2;
+            top = rect.bottom + scrollY + padding;
+            popup.style.transform = 'translateX(-50%)';
+            break;
+          case 'left':
+            left = rect.left + scrollX - popup.offsetWidth - padding;
+            top = rect.top + scrollY + rect.height/2;
+            popup.style.transform = 'translateY(-50%)';
+            break;
+          case 'right':
+            left = rect.right + scrollX + padding;
+            top = rect.top + scrollY + rect.height/2;
+            popup.style.transform = 'translateY(-50%)';
+            break;
+        }
+        
+        // Boundary checking to keep popup within viewport
+        const popupWidth = popup.offsetWidth;
+        const popupHeight = popup.offsetHeight;
+        
+        // Check left boundary
+        if (left < viewportPadding) {
+          left = viewportPadding;
+        }
+        
+        // Check right boundary
+        if (left + popupWidth > window.innerWidth - viewportPadding) {
+          left = window.innerWidth - popupWidth - viewportPadding;
+        }
+        
+        // Check top boundary
+        if (top < viewportPadding) {
+          top = viewportPadding;
+        }
+        
+        // Check bottom boundary
+        if (top + popupHeight > window.innerHeight - viewportPadding) {
+          top = window.innerHeight - popupHeight - viewportPadding;
+        }
+        
+        popup.style.left = `${left}px`;
+        popup.style.top = `${top}px`;
+      }
+    }
+
+    function nextTourStep() {
+      if (currentTourStep < tourSteps.length - 1) {
+        currentTourStep++;
+        showTourStep(currentTourStep);
+      } else {
+        finishTour();
+      }
+    }
+
+    function prevTourStep() {
+      if (currentTourStep > 0) {
+        currentTourStep--;
+        showTourStep(currentTourStep);
+      }
+    }
+
+    function finishTour() {
+      // Mark tour as completed
+      localStorage.setItem('hasSeenRouteTour', 'true');
+      
+      // Hide all tour elements
+      document.getElementById('tourOverlay').style.display = 'none';
+      document.getElementById('tourHighlight').style.display = 'none';
+      document.getElementById('tourPopup').style.display = 'none';
+      document.getElementById('tourProgress').style.display = 'none';
+      
+      tourStarted = false;
+    }
+
+    // Get URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const startNode = urlParams.get('start');
+    const endNode = urlParams.get('end');
+
+    console.log('URL Parameters:', { start: startNode, end: endNode });
+
+    // Update the page with the route information immediately
+    document.getElementById('startValue').textContent = startNode || 'Not specified';
+    document.getElementById('endValue').textContent = endNode || 'Not specified';
+    document.getElementById('startLabel').textContent = startNode || 'Not specified';
+    document.getElementById('endLabel').textContent = endNode || 'Not specified';
+
+    // Initialize path renderer and make it globally available
+    window.mapRenderer = new PathRenderer('mapCanvas');
+
+    // Function to show error message
+    function showError(message) {
+        const errorContainer = document.getElementById('errorContainer');
+        const errorText = document.getElementById('errorText');
+        errorText.textContent = message;
+        errorContainer.style.display = 'block';
+    }
+
+    // Function to hide error message
+    function hideError() {
+        document.getElementById('errorContainer').style.display = 'none';
+    }
+
+    // Function to calculate and display route
+    async function calculateAndDisplayRoute() {
+        if (!startNode || !endNode) {
+            const errorMsg = 'Start or end node missing from URL parameters';
+            console.error(errorMsg);
+            showError(errorMsg);
+            return;
+        }
+
+        try {
+            console.log('Calculating route from:', startNode, 'to:', endNode);
+            
+            const url = `/calculate-route?start=${encodeURIComponent(startNode)}&end=${encodeURIComponent(endNode)}`;
+            console.log('Fetching from URL:', url);
+            
+            const response = await fetch(url);
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            console.log('Route data received:', data);
+
+            // Hide any previous errors
+            hideError();
+
+            // Update UI with route information
+            document.getElementById('distanceValue').textContent = data.distance + ' units';
+            document.getElementById('timeValue').textContent = data.time;
+            document.getElementById('stepsValue').textContent = data.path ? data.path.length + ' steps' : '0 steps';
+            document.getElementById('startValue').textContent = data.start_label || startNode;
+            document.getElementById('endValue').textContent = data.end_label || endNode;
+            document.getElementById('startLabel').textContent = data.start_label || startNode;
+            document.getElementById('endLabel').textContent = data.end_label || endNode;
+
+            // Store the path for highlighting nodes
+            window.currentPath = data.path || [];
+
+            // Display directions
+            const directionsList = document.getElementById('directionsList');
+            directionsList.innerHTML = '';
+
+            if (data.path && data.path.length > 0) {
+                data.path.forEach((nodeId, index) => {
+                    const step = document.createElement('div');
+                    step.className = 'direction-step';
+                    
+                    if (index === 0) {
+                        step.classList.add('first-step');
+                    } else if (index === data.path.length - 1) {
+                        step.classList.add('last-step');
+                    }
+
+                    const stepNumber = document.createElement('div');
+                    stepNumber.className = 'step-number';
+                    stepNumber.textContent = index + 1;
+
+                    const stepInstruction = document.createElement('div');
+                    stepInstruction.className = 'step-instruction';
+                    
+                    let instruction = '';
+                    if (index === 0) {
+                        instruction = `${routeTranslations[currentLanguage].start} ${getNodeLabel(nodeId)}`;
+                    } else if (index === data.path.length - 1) {
+                        instruction = `${routeTranslations[currentLanguage].destination} ${getNodeLabel(nodeId)}`;
+                    } else {
+                        instruction = `${routeTranslations[currentLanguage].path} ${getNodeLabel(nodeId)}`;
+                        
+                        // Check if this is a floor change
+                        const currentNode = window.graphData?.nodes[nodeId];
+                        const prevNode = window.graphData?.nodes[data.path[index - 1]];
+                        
+                        if (currentNode && prevNode && currentNode.floor !== prevNode.floor) {
+                            instruction += ` (${routeTranslations[currentLanguage].move_to} ${getFloorName(currentNode.floor)})`;
+                        }
+                    }
+
+                    stepInstruction.textContent = instruction;
+
+                    step.appendChild(stepNumber);
+                    step.appendChild(stepInstruction);
+                    directionsList.appendChild(step);
+                });
+            } else {
+                directionsList.innerHTML = `<div class="direction-step">${routeTranslations[currentLanguage].no_route_found}</div>`;
+            }
+
+            // Update map with the floor-segmented paths
+            if (data.floor_segmented_paths) {
+                window.mapRenderer.updatePath(data.floor_segmented_paths, startNode, endNode);
+            }
+
+        } catch (error) {
+            console.error('Error calculating route:', error);
+            showError(error.message || 'Failed to calculate route. Please check if the locations exist and try again.');
+            document.getElementById('distanceValue').textContent = 'Error';
+            document.getElementById('timeValue').textContent = 'Error';
+            document.getElementById('stepsValue').textContent = 'Error';
+            document.getElementById('directionsList').innerHTML = 
+                `<div class="direction-step">${routeTranslations[currentLanguage].error_calculating_route}</div>`;
+        }
+    }
+
+    // Helper function to get node label
+    function getNodeLabel(nodeId) {
+        const node = window.graphData?.nodes[nodeId];
+        return node ? node.label : nodeId;
+    }
+
+    // Helper function to get floor name
+    function getFloorName(floor) {
+        const floorNames = {
+            'ground': routeTranslations[currentLanguage].ground_floor,
+            'first': routeTranslations[currentLanguage].first_floor, 
+            'second': routeTranslations[currentLanguage].second_floor,
+            'third': routeTranslations[currentLanguage].third_floor
+        };
+        return floorNames[floor] || floor;
+    }
+
+    // Function to check if a node is in the current path
+    function isNodeInPath(nodeId) {
+        return window.currentPath && window.currentPath.includes(nodeId);
+    }
+
+    // Load graph data and then calculate route
+    async function initializePage() {
+        try {
+            // Initialize language
+            const savedLang = loadLanguagePreference();
+            setLanguage(savedLang);
+
+            // NEW: Navigation menu functionality
+            const navBtn = document.getElementById('navBtn');
+            const navDropdown = document.getElementById('navDropdown');
+            const languageBtn = document.getElementById('languageBtn');
+            const languageDropdown = document.getElementById('languageDropdown');
+            
+            navBtn.addEventListener('click', () => {
+                navDropdown.classList.toggle('show');
+                // Close language dropdown when opening nav dropdown
+                languageDropdown.classList.remove('show');
+            });
+
+            // Language selector functionality - now integrated into nav menu
+            languageBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent closing the nav dropdown
+                languageDropdown.classList.toggle('show');
+            });
+
+            // Chatbot event listeners
+            chatbotBtn.addEventListener('click', toggleChatbot);
+            chatbotClose.addEventListener('click', closeChatbot);
+
+            // Close navigation dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!navBtn.contains(e.target) && !navDropdown.contains(e.target)) {
+                    navDropdown.classList.remove('show');
+                    languageDropdown.classList.remove('show');
+                }
+            });
+
+            // Profile button functionality
+            document.getElementById('profileBtn').addEventListener('click', () => {
+                // Navigate to profile page
+                window.location.href = '/profile';
+            });
+
+            // Dashboard button functionality
+            document.getElementById('dashboardBtn').addEventListener('click', () => {
+                // Navigate to dashboard page
+                window.location.href = '/dashboard';
+            });
+
+            // Front1 button functionality
+            document.getElementById('front1Btn').addEventListener('click', () => {
+                // Navigate to front1 page
+                window.location.href = '/front1';
+            });
+
+            // Language option selection
+            document.querySelectorAll('.language-dropdown .nav-option').forEach(option => {
+                option.addEventListener('click', () => {
+                    const lang = option.getAttribute('data-lang');
+                    setLanguage(lang);
+                    languageDropdown.classList.remove('show');
+                });
+            });
+
+            // Tour event listeners
+            document.getElementById('tourNext').addEventListener('click', nextTourStep);
+            document.getElementById('tourPrev').addEventListener('click', prevTourStep);
+            document.getElementById('tourSkip').addEventListener('click', finishTour);
+
+            // Start tour after a short delay (only for new users)
+            setTimeout(startTour, 1000);
+
+            // Fetch graph data from the backend
+            const graphResponse = await fetch('/get-graph-data');
+            if (!graphResponse.ok) {
+                throw new Error('Failed to load graph data');
+            }
+            const graphData = await graphResponse.json();
+            
+            // Set graph data globally and in map renderer
+            window.graphData = graphData;
+            window.mapRenderer.setGraphData(graphData);
+
+            // Validate that start and end nodes exist
+            if (startNode && !graphData.nodes[startNode]) {
+                showError(`Start location "${startNode}" not found. Please go back and select a valid location.`);
+                return;
+            }
+            
+            if (endNode && !graphData.nodes[endNode]) {
+                showError(`Destination "${endNode}" not found. Please go back and select a valid location.`);
+                return;
+            }
+
+            // Calculate route once page is loaded
+            await calculateAndDisplayRoute();
+            
+        } catch (error) {
+            console.error('Error initializing page:', error);
+            showError('Failed to initialize page: ' + error.message);
+        }
+    }
+
+    // Floor button functionality
+    document.querySelectorAll('.floor-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.floor-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            const selectedFloor = this.dataset.floor;
+            window.mapRenderer.setCurrentFloor(selectedFloor);
+            console.log('Switched to floor:', selectedFloor);
+        });
+    });
+
+    // Map control buttons
+    document.getElementById('zoomIn').addEventListener('click', function() {
+        window.mapRenderer.zoomIn();
+    });
+
+    document.getElementById('zoomOut').addEventListener('click', function() {
+        window.mapRenderer.zoomOut();
+    });
+
+    document.getElementById('resetView').addEventListener('click', function() {
+        window.mapRenderer.resetView();
+    });
+
+    // Emergency button functionality
+    document.getElementById('emergencyButton').addEventListener('click', function() {
+        document.getElementById('emergencyModal').style.display = 'flex';
+    });
+
+    document.getElementById('confirmEmergency').addEventListener('click', function() {
+        alert(routeTranslations[currentLanguage].emergency_notified || 'Emergency assistance has been notified! Stay where you are.');
+        document.getElementById('emergencyModal').style.display = 'none';
+    });
+
+    document.getElementById('cancelEmergency').addEventListener('click', function() {
+        document.getElementById('emergencyModal').style.display = 'none';
+    });
+
+    // Voice guidance functionality
+    let speechSynthesis = null;
+    let currentStepIndex = 0;
+
+    document.getElementById('startVoiceGuidance').addEventListener('click', function() {
+        this.disabled = true;
+        document.getElementById('stopVoiceGuidance').disabled = false;
+        startVoiceGuidance();
+    });
+
+    document.getElementById('stopVoiceGuidance').addEventListener('click', function() {
+        this.disabled = true;
+        document.getElementById('startVoiceGuidance').disabled = false;
+        stopVoiceGuidance();
+    });
+
+    function startVoiceGuidance() {
+        if (!window.speechSynthesis) {
+            alert('Speech synthesis not supported in your browser');
+            document.getElementById('startVoiceGuidance').disabled = false;
+            document.getElementById('stopVoiceGuidance').disabled = true;
+            return;
+        }
+
+        const directions = document.querySelectorAll('.step-instruction');
+        if (directions.length === 0) {
+            alert('No route instructions available');
+            document.getElementById('startVoiceGuidance').disabled = false;
+            document.getElementById('stopVoiceGuidance').disabled = true;
+            return;
+        }
+
+        currentStepIndex = 0;
+        speakNextInstruction(directions);
+    }
+
+    function speakNextInstruction(directions) {
+        if (currentStepIndex >= directions.length || document.getElementById('stopVoiceGuidance').disabled) {
+            return;
+        }
+
+        const instruction = directions[currentStepIndex].textContent;
+        const utterance = new SpeechSynthesisUtterance(instruction);
+        
+        utterance.onend = function() {
+            currentStepIndex++;
+            if (currentStepIndex < directions.length && !document.getElementById('stopVoiceGuidance').disabled) {
+                setTimeout(() => speakNextInstruction(directions), 2000); // Wait 2 seconds before next instruction
+            } else {
+                document.getElementById('startVoiceGuidance').disabled = false;
+                document.getElementById('stopVoiceGuidance').disabled = true;
+            }
+        };
+
+        utterance.onerror = function(event) {
+            console.error('Speech synthesis error:', event);
+            document.getElementById('startVoiceGuidance').disabled = false;
+            document.getElementById('stopVoiceGuidance').disabled = true;
+        };
+
+        window.speechSynthesis.speak(utterance);
+    }
+
+    function stopVoiceGuidance() {
+        if (window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+        }
+        currentStepIndex = 0;
+    }
+
+    // Initialize the page when loaded
+    document.addEventListener('DOMContentLoaded', initializePage);
+	    // Debug function to check user status
+    function debugUserStatus() {
+      fetch('/check-user-exists')
+        .then(response => response.json())
+        .then(data => {
+          console.log('User exists in database:', data.user_exists);
+          console.log('Session data:', {
+            user_id: '{{ session.get("user_id", "None") }}',
+            session_id: '{{ session.get("session_id", "None") }}',
+            user_name: '{{ session.get("user_name", "None") }}'
+          });
+        })
+        .catch(error => {
+          console.error('Debug error:', error);
+        });
+    }
+
+    // Call debug on page load
+    setTimeout(debugUserStatus, 500);
+</script>
+</body>
+</html>
