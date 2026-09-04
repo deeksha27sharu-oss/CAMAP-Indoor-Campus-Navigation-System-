@@ -12,11 +12,9 @@ Installation Steps
    - Click the green "Code" button → "Download ZIP"
    - OR clone with: `git clone [your-repo-url]`
 
-2. **Extract the ZIP file** (if downloaded)
+2. **Open terminal** in project folder
 
-3. **Open terminal** in project folder
-
-4. **Create virtual environment** (optional but recommended)
+3. **Create virtual environment** (optional but recommended)
    ```bash
    python -m venv venv
    venv\Scripts\activate  # On Windows
