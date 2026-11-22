@@ -1008,6 +1008,62 @@ def admin_stats():
     except Exception as e:
         return jsonify({'error': f'Error fetching stats: {str(e)}'}), 500
 
+@app.route('/dashboard-stats')
+def dashboard_stats():
+    """Anonymous statistics for the dashboard (no personal names)."""
+    if 'user_id' not in session:
+        return jsonify({'error': 'User not logged in'}), 401
+
+    try:
+        conn = sqlite3.connect('campus_navigation.db')
+        c = conn.cursor()
+
+        c.execute('SELECT COUNT(*) FROM users')
+        total_users = c.fetchone()[0]
+
+        c.execute('SELECT COUNT(*) FROM user_activity')
+        total_routes = c.fetchone()[0]
+
+        c.execute('SELECT role, COUNT(*) FROM users GROUP BY role')
+        role_distribution = dict(c.fetchall())
+
+        c.execute('''
+            SELECT u.role, ua.start_location, ua.end_location, ua.duration, ua.activity_time
+            FROM user_activity ua
+            JOIN users u ON ua.user_id = u.id
+            ORDER BY ua.activity_time DESC
+            LIMIT 10
+        ''')
+        role_labels = {
+            'mlacw_student': 'A student',
+            'mlacw_staff': 'A staff member',
+            'guest': 'A guest',
+        }
+        recent_activity = []
+        for row in c.fetchall():
+            recent_activity.append({
+                'name': role_labels.get(row[0], 'A visitor'),
+                'role': row[0],
+                'start_location': row[1],
+                'end_location': row[2],
+                'duration': row[3],
+                'activity_time': row[4],
+            })
+
+        conn.close()
+
+        return jsonify({
+            'total_users': total_users,
+            'total_routes': total_routes,
+            'role_distribution': role_distribution,
+            'recent_activity': recent_activity,
+        })
+
+    except Exception as e:
+        print(f"Error fetching dashboard stats: {e}")
+        return jsonify({'error': 'Could not load statistics'}), 500
+    
+
 if __name__ == '__main__':
     app.run(
         debug=os.environ.get('FLASK_DEBUG') == '1',

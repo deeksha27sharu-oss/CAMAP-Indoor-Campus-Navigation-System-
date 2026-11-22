@@ -632,7 +632,7 @@
                 // Show loading state
                 this.showLoadingState();
                 
-                const response = await fetch('/admin/stats');
+                const response = await fetch('/dashboard-stats');
                 if (!response.ok) throw new Error('Failed to fetch AI data');
                 
                 const data = await response.json();
