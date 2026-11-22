@@ -35,3 +35,7 @@ ngrok.yml
 
 # Logs
 *.log
+
+.env
+*.docx
+~$*

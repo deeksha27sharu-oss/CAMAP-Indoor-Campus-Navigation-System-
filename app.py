@@ -1,12 +1,30 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
+from functools import wraps
+import hmac
 import math
 import json
 import sqlite3
 import datetime
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = 'campus_navigator_secret_key_2024'
+app.secret_key = os.environ.get('SECRET_KEY')
+if not app.secret_key:
+    raise RuntimeError("SECRET_KEY is not set. Copy .env.example to .env and fill it in.")
+
+ADMIN_TOKEN = os.environ.get('ADMIN_TOKEN', '')
+
+def admin_required(view):
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        supplied = request.headers.get('X-Admin-Token') or request.args.get('key', '')
+        if not ADMIN_TOKEN or not hmac.compare_digest(supplied, ADMIN_TOKEN):
+            return jsonify({'error': 'Forbidden'}), 403
+        return view(*args, **kwargs)
+    return wrapped
 
 # Database initialization
 def init_db():
@@ -692,6 +710,9 @@ make_graph_bidirectional(GRAPH_DATA)
 make_graph_bidirectional(GRAPH_DATA_WITHOUT_LIFT)
 
 # APPLICATION ROUTES
+@app.route('/portfolio')
+def portfolio():
+    return render_template('portfolio.html')
 
 @app.route('/')
 def index():
@@ -858,11 +879,6 @@ def check_user_exists():
     except Exception as e:
         print(f"Error checking user existence: {e}")
         return jsonify({'user_exists': False}) 
-    
-@app.route('/chatbot')
-def chatbot():
-    """Chatbot interface for campus assistance"""
-    return render_template('chatbot.html')
 
 @app.route('/profile')
 def profile():
@@ -943,6 +959,7 @@ def logout():
     return redirect(url_for('index'))
 
 @app.route('/admin/stats')
+@admin_required
 def admin_stats():
     try:
         conn = sqlite3.connect('campus_navigation.db')
@@ -992,4 +1009,8 @@ def admin_stats():
         return jsonify({'error': f'Error fetching stats: {str(e)}'}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(
+        debug=os.environ.get('FLASK_DEBUG') == '1',
+        host=os.environ.get('HOST', '127.0.0.1'),
+        port=5000,
+    )
