@@ -1199,6 +1199,58 @@ def dashboard_stats():
         return jsonify({'error': 'Could not load statistics'}), 500
     
 
+# Nearest facility
+FACILITY_CATEGORIES = {
+    'washroom_women': ['Ladies Toilet1', 'Ladies Toilet2', 'Ladies Toilet3'],
+    'washroom_men': ['Mens Toilet'],
+    'canteen': ['Bun World', 'Canteen'],
+    'library': ['Library', 'PG Library'],
+    'health': ['Health Center'],
+    'exit': ['Gate'],
+}
+
+
+@app.route('/nearest')
+def nearest():
+    """Find the closest facility of a given category from a start room."""
+    if 'user_name' not in session:
+        return jsonify({'error': 'User not logged in'}), 401
+
+    start = request.args.get('start')
+    category = request.args.get('category')
+    graph_data = pick_graph(get_route_mode())
+
+    if category not in FACILITY_CATEGORIES:
+        return jsonify({'error': 'Unknown category'}), 400
+    if start not in graph_data['nodes']:
+        return jsonify({'error': 'Start room not found'}), 400
+
+    options = []
+    for node_id in FACILITY_CATEGORIES[category]:
+        if node_id == start or node_id not in graph_data['nodes']:
+            continue
+        result = dijkstra(start, node_id, graph_data)
+        if not result['path']:
+            continue  # not reachable (for example in step-free mode)
+        node = graph_data['nodes'][node_id]
+        options.append({
+            'node': node_id,
+            'label': node['label'],
+            'floor': node['floor'],
+            'distance': result['distance'],
+            'time': format_time(result['distance'] * TIME_PER_UNIT_SECONDS),
+        })
+
+    if not options:
+        return jsonify({'error': 'No reachable facility of this type'}), 404
+
+    options.sort(key=lambda option: option['distance'])
+    return jsonify({
+        'category': category,
+        'nearest': options[0],
+        'others': options[1:3],
+    })
+
 if __name__ == '__main__':
     app.run(
         debug=os.environ.get('FLASK_DEBUG') == '1',

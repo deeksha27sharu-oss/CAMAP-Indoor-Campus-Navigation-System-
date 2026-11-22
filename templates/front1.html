@@ -139,6 +139,21 @@
         color: #555;
     }
 
+        .nearest-bar { margin-top: 16px; }
+    .nearest-title { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+    .nearest-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .nearest-chip {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: inherit;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .nearest-chip:hover { background: var(--accent); }
+    .nearest-chip:disabled { opacity: 0.6; cursor: wait; }
+    
     .btn-primary {
       background-color: var(--accent);
       color: white;
@@ -1030,6 +1045,10 @@
           <label for="stepFreeCheck" data-i18n="step_free_label" style="margin: 0; font-size: 13px;">♿ Step-free route (lifts only, no stairs)</label>
         </div>
       </form>
+            <div class="nearest-bar">
+        <div class="nearest-title" id="nearestTitle"></div>
+        <div class="nearest-chips" id="nearestChips"></div>
+      </div>
     </section>
 
     <section class="card">
@@ -1707,6 +1726,7 @@
       currentLanguage = lang;
       document.getElementById('currentLanguage').textContent = translations[lang].app_title.split('-')[0];
       applyTranslations(lang);
+      renderNearestButtons();
       saveLanguagePreference(lang);
       
       // Send language preference to server
@@ -2502,7 +2522,133 @@
         initializeSpeechRecognition();
     });
 
+    // ---- Nearest facility buttons ----
+    const nearestCategories = [
+      { id: 'washroom_women', icon: '🚺' },
+      { id: 'washroom_men', icon: '🚹' },
+      { id: 'canteen', icon: '🍽️' },
+      { id: 'library', icon: '📚' },
+      { id: 'health', icon: '🏥' },
+      { id: 'exit', icon: '🚪' }
+    ];
 
+    const nearestTexts = {
+      en: {
+        title: 'Or find the nearest…',
+        washroom_women: "Ladies' washroom",
+        washroom_men: "Men's washroom",
+        canteen: 'Canteen',
+        library: 'Library',
+        health: 'Health room',
+        exit: 'Exit',
+        pick_start: 'Please choose your starting room first.',
+        none: 'No facility of this type can be reached from here.',
+        error: 'Something went wrong. Please try again.'
+      },
+      hi: {
+        title: 'या सबसे नज़दीकी खोजें…',
+        washroom_women: 'महिला शौचालय',
+        washroom_men: 'पुरुष शौचालय',
+        canteen: 'कैंटीन',
+        library: 'पुस्तकालय',
+        health: 'स्वास्थ्य कक्ष',
+        exit: 'निकास',
+        pick_start: 'कृपया पहले अपना शुरुआती कमरा चुनें।',
+        none: 'यहाँ से इस प्रकार की कोई सुविधा उपलब्ध नहीं है।',
+        error: 'कुछ गलत हो गया। कृपया फिर से प्रयास करें।'
+      },
+      kn: {
+        title: 'ಅಥವಾ ಹತ್ತಿರದ ಸ್ಥಳ ಹುಡುಕಿ…',
+        washroom_women: 'ಮಹಿಳಾ ಶೌಚಾಲಯ',
+        washroom_men: 'ಪುರುಷ ಶೌಚಾಲಯ',
+        canteen: 'ಕ್ಯಾಂಟೀನ್',
+        library: 'ಗ್ರಂಥಾಲಯ',
+        health: 'ಆರೋಗ್ಯ ಕೊಠಡಿ',
+        exit: 'ನಿರ್ಗಮನ',
+        pick_start: 'ದಯವಿಟ್ಟು ಮೊದಲು ನಿಮ್ಮ ಆರಂಭಿಕ ಕೊಠಡಿಯನ್ನು ಆಯ್ಕೆಮಾಡಿ.',
+        none: 'ಇಲ್ಲಿಂದ ಈ ಪ್ರಕಾರದ ಯಾವುದೇ ಸೌಲಭ್ಯ ತಲುಪಲು ಸಾಧ್ಯವಿಲ್ಲ.',
+        error: 'ಏನೋ ತಪ್ಪಾಗಿದೆ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.'
+      },
+      ta: {
+        title: 'அல்லது அருகிலுள்ளதைத் தேடுங்கள்…',
+        washroom_women: 'பெண்கள் கழிப்பறை',
+        washroom_men: 'ஆண்கள் கழிப்பறை',
+        canteen: 'கேன்டீன்',
+        library: 'நூலகம்',
+        health: 'சுகாதார அறை',
+        exit: 'வெளியேறு',
+        pick_start: 'முதலில் உங்கள் தொடக்க அறையைத் தேர்ந்தெடுக்கவும்.',
+        none: 'இங்கிருந்து இந்த வகை வசதி எதையும் அடைய முடியாது.',
+        error: 'ஏதோ தவறு நடந்தது. மீண்டும் முயற்சிக்கவும்.'
+      },
+      te: {
+        title: 'లేదా సమీపంలోనిది కనుగొనండి…',
+        washroom_women: 'మహిళల టాయిలెట్',
+        washroom_men: 'పురుషుల టాయిలెట్',
+        canteen: 'క్యాంటీన్',
+        library: 'లైబ్రరీ',
+        health: 'ఆరోగ్య గది',
+        exit: 'నిష్క్రమణ',
+        pick_start: 'దయచేసి ముందుగా మీ ప్రారంభ గదిని ఎంచుకోండి.',
+        none: 'ఇక్కడి నుండి ఈ రకమైన సౌకర్యాన్ని చేరుకోలేరు.',
+        error: 'ఏదో తప్పు జరిగింది. దయచేసి మళ్లీ ప్రయత్నించండి.'
+      }
+    };
+
+    function renderNearestButtons() {
+      const texts = nearestTexts[currentLanguage] || nearestTexts.en;
+      document.getElementById('nearestTitle').textContent = texts.title;
+
+      const box = document.getElementById('nearestChips');
+      box.innerHTML = '';
+
+      nearestCategories.forEach(category => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'nearest-chip';
+        button.textContent = category.icon + ' ' + texts[category.id];
+        button.addEventListener('click', () => goToNearest(category.id, button));
+        box.appendChild(button);
+      });
+    }
+
+    async function goToNearest(category, button) {
+      const texts = nearestTexts[currentLanguage] || nearestTexts.en;
+
+      const startName = document.getElementById('startInput').value.trim();
+      const start = startRoomMap[startName];
+      if (!start) {
+        alert(texts.pick_start);
+        document.getElementById('startInput').focus();
+        return;
+      }
+
+      const stepFree = document.getElementById('stepFreeCheck').checked;
+      const modeParam = stepFree ? '&mode=step_free' : '';
+
+      button.disabled = true;
+      try {
+        const response = await fetch(`/nearest?start=${encodeURIComponent(start)}&category=${category}${modeParam}`);
+        if (response.status === 404) {
+          alert(texts.none);
+          return;
+        }
+        if (!response.ok) {
+          throw new Error('HTTP ' + response.status);
+        }
+        const data = await response.json();
+        window.location.href = `/route?start=${encodeURIComponent(start)}&end=${encodeURIComponent(data.nearest.node)}${modeParam}`;
+      } catch (error) {
+        console.error('Nearest lookup failed:', error);
+        alert(texts.error);
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    renderNearestButtons();
+    
+    
     // --- Form Submission Logic (FIXED) ---
     document.getElementById('routeForm').addEventListener('submit', function(e) {
         e.preventDefault();
