@@ -6,6 +6,7 @@ import json
 import sqlite3
 import datetime
 import os
+import re
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -538,6 +539,7 @@ FLOOR_NAMES = {
 }
 
 TIME_PER_UNIT_SECONDS = 2.0
+FLOOR_ORDER = ['ground', 'first', 'second', 'third']
 
 class PriorityQueue:
     def __init__(self):
@@ -705,6 +707,97 @@ def get_floor_segmented_path(node_path, graph_data):
     
     return floor_paths
 
+# Directions builder
+HIDDEN_LANDMARK_TYPES = {'stairs', 'lift', 'connector'}
+
+
+def _short_stair_name(label):
+    """'Stair 2 G-F' -> 'Stair 2' (the floors are described separately)."""
+    return re.sub(r'\s+[GFST]-[GFST]$', '', label).strip()
+
+
+def _pick_landmarks(names, limit=3):
+    """Keep at most `limit` names, spread along the walk."""
+    if len(names) <= limit:
+        return names
+    return [names[0], names[len(names) // 2], names[-1]]
+
+
+def build_directions(node_path, graph_data):
+    """Turn a node path into a short list of language-neutral steps.
+
+    Step types: start, walk, stairs, lift, arrive.
+    The browser turns these into sentences in the user's language.
+    """
+    nodes = graph_data["nodes"]
+    adjacency = graph_data["adjacency"]
+
+    if len(node_path) < 2:
+        return []
+
+    steps = []
+    first = nodes[node_path[0]]
+    steps.append({"type": "start", "label": first["label"], "floor": first["floor"]})
+
+    walk = {"floor": None, "via": [], "distance": 0}
+    climb = None
+
+    def flush_walk():
+        if walk["distance"] > 0:
+            seconds = walk["distance"] * TIME_PER_UNIT_SECONDS
+            steps.append({
+                "type": "walk",
+                "floor": walk["floor"],
+                "via": _pick_landmarks(walk["via"]),
+                "distance": walk["distance"],
+                "time": format_time(seconds),
+            })
+        walk["floor"], walk["via"], walk["distance"] = None, [], 0
+
+    def flush_climb():
+        nonlocal climb
+        if climb:
+            floors = FLOOR_ORDER
+            going_up = floors.index(climb["to_floor"]) > floors.index(climb["from_floor"])
+            climb["direction"] = "up" if going_up else "down"
+            climb["time"] = format_time(climb["distance"] * TIME_PER_UNIT_SECONDS)
+            steps.append(climb)
+            climb = None
+
+    last_index = len(node_path) - 1
+    for i in range(last_index):
+        a_id, b_id = node_path[i], node_path[i + 1]
+        a, b = nodes[a_id], nodes[b_id]
+        weight = adjacency[a_id][b_id]
+
+        if a["floor"] != b["floor"]:
+            flush_walk()
+            if climb is None:
+                kind = "lift" if a["type"] == "lift" else "stairs"
+                climb = {
+                    "type": kind,
+                    "name": _short_stair_name(a["label"]) if kind == "stairs" else a["label"],
+                    "from_floor": a["floor"],
+                    "to_floor": b["floor"],
+                    "distance": 0,
+                }
+            climb["to_floor"] = b["floor"]
+            climb["distance"] += weight
+        else:
+            flush_climb()
+            walk["floor"] = a["floor"]
+            walk["distance"] += weight
+            if i + 1 < last_index and b["type"] not in HIDDEN_LANDMARK_TYPES:
+                walk["via"].append(b["label"])
+
+    flush_walk()
+    flush_climb()
+
+    last = nodes[node_path[-1]]
+    steps.append({"type": "arrive", "label": last["label"], "floor": last["floor"]})
+    return steps
+
+
 # Initialize the graphs
 make_graph_bidirectional(GRAPH_DATA)
 make_graph_bidirectional(GRAPH_DATA_WITHOUT_LIFT)
@@ -819,7 +912,8 @@ def calculate_route():
             "time": format_time(total_time_seconds),
             "start_label": graph_data["nodes"][start_node]["label"],
             "end_label": graph_data["nodes"][end_node]["label"],
-            "user_role": user_role
+            "user_role": user_role,
+            "directions": build_directions(result["path"], graph_data)
         }
         
         return jsonify(response)

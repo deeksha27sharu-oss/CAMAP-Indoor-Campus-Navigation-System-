@@ -1073,6 +1073,7 @@
       currentLanguage = lang;
       document.getElementById('currentLanguage').textContent = routeTranslations[lang].app_title.split('-')[0];
       applyRouteTranslations(lang);
+      renderDirections();
       saveLanguagePreference(lang);
       
       // Send language preference to server
@@ -1522,7 +1523,7 @@
             // Update UI with route information
             document.getElementById('distanceValue').textContent = data.distance + ' units';
             document.getElementById('timeValue').textContent = data.time;
-            document.getElementById('stepsValue').textContent = data.path ? data.path.length + ' steps' : '0 steps';
+            document.getElementById('stepsValue').textContent = (data.directions ? data.directions.length : 0) + ' steps';
             document.getElementById('startValue').textContent = data.start_label || startNode;
             document.getElementById('endValue').textContent = data.end_label || endNode;
             document.getElementById('startLabel').textContent = data.start_label || startNode;
@@ -1532,53 +1533,8 @@
             window.currentPath = data.path || [];
 
             // Display directions
-            const directionsList = document.getElementById('directionsList');
-            directionsList.innerHTML = '';
-
-            if (data.path && data.path.length > 0) {
-                data.path.forEach((nodeId, index) => {
-                    const step = document.createElement('div');
-                    step.className = 'direction-step';
-                    
-                    if (index === 0) {
-                        step.classList.add('first-step');
-                    } else if (index === data.path.length - 1) {
-                        step.classList.add('last-step');
-                    }
-
-                    const stepNumber = document.createElement('div');
-                    stepNumber.className = 'step-number';
-                    stepNumber.textContent = index + 1;
-
-                    const stepInstruction = document.createElement('div');
-                    stepInstruction.className = 'step-instruction';
-                    
-                    let instruction = '';
-                    if (index === 0) {
-                        instruction = `${routeTranslations[currentLanguage].start} ${getNodeLabel(nodeId)}`;
-                    } else if (index === data.path.length - 1) {
-                        instruction = `${routeTranslations[currentLanguage].destination} ${getNodeLabel(nodeId)}`;
-                    } else {
-                        instruction = `${routeTranslations[currentLanguage].path} ${getNodeLabel(nodeId)}`;
-                        
-                        // Check if this is a floor change
-                        const currentNode = window.graphData?.nodes[nodeId];
-                        const prevNode = window.graphData?.nodes[data.path[index - 1]];
-                        
-                        if (currentNode && prevNode && currentNode.floor !== prevNode.floor) {
-                            instruction += ` (${routeTranslations[currentLanguage].move_to} ${getFloorName(currentNode.floor)})`;
-                        }
-                    }
-
-                    stepInstruction.textContent = instruction;
-
-                    step.appendChild(stepNumber);
-                    step.appendChild(stepInstruction);
-                    directionsList.appendChild(step);
-                });
-            } else {
-                directionsList.innerHTML = `<div class="direction-step">${routeTranslations[currentLanguage].no_route_found}</div>`;
-            }
+            window.currentDirections = data.directions || [];
+            renderDirections();
 
             // Update map with the floor-segmented paths
             if (data.floor_segmented_paths) {
@@ -1596,6 +1552,121 @@
         }
     }
 
+    // ---- Turn-by-turn directions ----
+    const directionTexts = {
+      en: {
+        start: 'Start at {place}',
+        walk_via: 'Walk past {via}',
+        walk_plain: 'Continue along the corridor',
+        stairs_up: 'Take {name} up to the {floor}',
+        stairs_down: 'Take {name} down to the {floor}',
+        lift_up: 'Take the lift up to the {floor}',
+        lift_down: 'Take the lift down to the {floor}',
+        arrive: 'You have arrived at {place}'
+      },
+      hi: {
+        start: '{place} से शुरू करें',
+        walk_via: '{via} के पास से गुज़रते हुए आगे बढ़ें',
+        walk_plain: 'गलियारे में आगे बढ़ते रहें',
+        stairs_up: '{name} से {floor} पर ऊपर जाएँ',
+        stairs_down: '{name} से {floor} पर नीचे जाएँ',
+        lift_up: 'लिफ्ट से {floor} पर ऊपर जाएँ',
+        lift_down: 'लिफ्ट से {floor} पर नीचे जाएँ',
+        arrive: 'आप {place} पर पहुँच गए हैं'
+      },
+      kn: {
+        start: '{place} ನಿಂದ ಪ್ರಾರಂಭಿಸಿ',
+        walk_via: '{via} ಹಾದು ಮುಂದೆ ಸಾಗಿ',
+        walk_plain: 'ಕಾರಿಡಾರ್‌ನಲ್ಲಿ ಮುಂದೆ ಸಾಗಿ',
+        stairs_up: '{name} ಮೂಲಕ {floor} ಗೆ ಮೇಲೆ ಹೋಗಿ',
+        stairs_down: '{name} ಮೂಲಕ {floor} ಗೆ ಕೆಳಗೆ ಹೋಗಿ',
+        lift_up: 'ಲಿಫ್ಟ್ ಮೂಲಕ {floor} ಗೆ ಮೇಲೆ ಹೋಗಿ',
+        lift_down: 'ಲಿಫ್ಟ್ ಮೂಲಕ {floor} ಗೆ ಕೆಳಗೆ ಹೋಗಿ',
+        arrive: 'ನೀವು {place} ತಲುಪಿದ್ದೀರಿ'
+      },
+      ta: {
+        start: '{place} இலிருந்து தொடங்குங்கள்',
+        walk_via: '{via} வழியாக முன்னேறுங்கள்',
+        walk_plain: 'நடைபாதையில் தொடர்ந்து செல்லுங்கள்',
+        stairs_up: '{name} வழியாக {floor} க்கு மேலே செல்லுங்கள்',
+        stairs_down: '{name} வழியாக {floor} க்கு கீழே செல்லுங்கள்',
+        lift_up: 'லிஃப்ட் மூலம் {floor} க்கு மேலே செல்லுங்கள்',
+        lift_down: 'லிஃப்ட் மூலம் {floor} க்கு கீழே செல்லுங்கள்',
+        arrive: 'நீங்கள் {place} வந்தடைந்துவிட்டீர்கள்'
+      },
+      te: {
+        start: '{place} నుండి ప్రారంభించండి',
+        walk_via: '{via} దాటి ముందుకు వెళ్లండి',
+        walk_plain: 'కారిడార్‌లో ముందుకు వెళ్లండి',
+        stairs_up: '{name} ద్వారా {floor} కి పైకి వెళ్లండి',
+        stairs_down: '{name} ద్వారా {floor} కి కిందకు వెళ్లండి',
+        lift_up: 'లిఫ్ట్ ద్వారా {floor} కి పైకి వెళ్లండి',
+        lift_down: 'లిఫ్ట్ ద్వారా {floor} కి కిందకు వెళ్లండి',
+        arrive: 'మీరు {place} చేరుకున్నారు'
+      }
+    };
+
+    function fillTemplate(template, values) {
+      return template.replace(/\{(\w+)\}/g, (_, key) => (values[key] !== undefined ? values[key] : ''));
+    }
+
+    function describeStep(step, texts) {
+      switch (step.type) {
+        case 'start':
+          return '📍 ' + fillTemplate(texts.start, { place: step.label });
+        case 'walk': {
+          const base = step.via.length
+            ? fillTemplate(texts.walk_via, { via: step.via.join(', ') })
+            : texts.walk_plain;
+          return '🚶 ' + base + ' (' + step.time + ')';
+        }
+        case 'stairs':
+        case 'lift': {
+          const arrow = step.direction === 'up' ? '⬆️ ' : '⬇️ ';
+          const template = texts[step.type + '_' + step.direction];
+          return arrow + fillTemplate(template, { name: step.name, floor: getFloorName(step.to_floor) }) + ' (' + step.time + ')';
+        }
+        case 'arrive':
+          return '🏁 ' + fillTemplate(texts.arrive, { place: step.label });
+        default:
+          return '';
+      }
+    }
+
+    function renderDirections() {
+      const list = document.getElementById('directionsList');
+      const steps = window.currentDirections;
+      if (!list || !steps) return;
+
+      list.innerHTML = '';
+
+      if (steps.length === 0) {
+        list.innerHTML = `<div class="direction-step">${routeTranslations[currentLanguage].no_route_found}</div>`;
+        return;
+      }
+
+      const texts = directionTexts[currentLanguage] || directionTexts.en;
+
+      steps.forEach((step, index) => {
+        const row = document.createElement('div');
+        row.className = 'direction-step';
+        if (index === 0) row.classList.add('first-step');
+        if (index === steps.length - 1) row.classList.add('last-step');
+
+        const number = document.createElement('div');
+        number.className = 'step-number';
+        number.textContent = index + 1;
+
+        const text = document.createElement('div');
+        text.className = 'step-instruction';
+        text.textContent = describeStep(step, texts);
+
+        row.appendChild(number);
+        row.appendChild(text);
+        list.appendChild(row);
+      });
+    }
+    
     // Helper function to get node label
     function getNodeLabel(nodeId) {
         const node = window.graphData?.nodes[nodeId];
