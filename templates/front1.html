@@ -1025,6 +1025,10 @@
           <label style="opacity:0" data-i18n="find_route_button">Find Route Button</label>
           <button type="submit" class="btn-primary" id="findRouteBtn" data-i18n="find_route">Find Route →</button>
         </div>
+              <div class="field" style="flex: 1 1 100%; flex-direction: row; align-items: center; gap: 8px;">
+          <input type="checkbox" id="stepFreeCheck" style="width: auto; margin: 0;">
+          <label for="stepFreeCheck" data-i18n="step_free_label" style="margin: 0; font-size: 13px;">♿ Step-free route (lifts only, no stairs)</label>
+        </div>
       </form>
     </section>
 
@@ -1514,6 +1518,7 @@
         'destination_room': 'Destination Room',
         'find_route_button': 'Find Route Button',
         'find_route': 'Find Route →',
+        'step_free_label': 'Step-free route (lifts only, no stairs)',
         'start_placeholder': 'Type or select starting room',
         'end_placeholder': 'Type or select destination room',
         'select_start_room': 'Select starting room',
@@ -1568,6 +1573,7 @@
         'destination_room': 'गंतव्य कक्ष',
         'find_route_button': 'रूट खोजें बटन',
         'find_route': 'रूट खोजें →',
+        'step_free_label': 'सीढ़ी-रहित मार्ग (केवल लिफ्ट, सीढ़ियाँ नहीं)',
         'start_placeholder': 'प्रारंभ कक्ष टाइप या चुनें',
         'end_placeholder': 'गंतव्य कक्ष टाइप या चुनें',
         'select_start_room': 'प्रारंभ कक्ष चुनें',
@@ -1601,6 +1607,7 @@
         'destination_room': 'ಗಮ್ಯಸ್ಥಾನ ಕೊಠಡಿ',
         'find_route_button': 'ಮಾರ್ಗ ಹುಡುಕು ಬಟನ್',
         'find_route': 'ಮಾರ್ಗ ಹುಡುಕಿ →',
+        'step_free_label': 'ಮೆಟ್ಟಿಲು ರಹಿತ ಮಾರ್ಗ (ಲಿಫ್ಟ್ ಮಾತ್ರ, ಮೆಟ್ಟಿಲುಗಳಿಲ್ಲ)',
         'start_placeholder': 'ಪ್ರಾರಂಭ ಕೊಠಡಿ ಟೈಪ್ ಅಥವಾ ಆಯ್ಕೆಮಾಡಿ',
         'end_placeholder': 'ಗಮ್ಯಸ್ಥಾನ ಕೊಠಡಿ ಟೈಪ್ ಅಥವಾ ಆಯ್ಕೆಮಾಡಿ',
         'select_start_room': 'ಪ್ರಾರಂಭ ಕೊಠಡಿ ಆಯ್ಕೆಮಾಡಿ',
@@ -1634,6 +1641,7 @@
         'destination_room': 'சேரும் இட அறை',
         'find_route_button': 'பாதை கண்டுபிடி பொத்தான்',
         'find_route': 'பாதை கண்டுபிடி →',
+        'step_free_label': 'படிக்கட்டு இல்லாத பாதை (லிஃப்ட் மட்டும்)',
         'start_placeholder': 'தொடக்க அறையை தட்டச்சு அல்லது தேர்ந்தெடுக்கவும்',
         'end_placeholder': 'சேரும் இட அறையை தட்டச்சு அல்லது தேர்ந்தெடுக்கவும்',
         'select_start_room': 'தொடக்க அறையைத் தேர்ந்தெடுக்கவும்',
@@ -1667,6 +1675,7 @@
         'destination_room': 'గమ్యస్థాన గది',
         'find_route_button': 'మార్గం కనుగొను బటన్',
         'find_route': 'మార్గం కనుగొనండి →',
+        'step_free_label': 'మెట్లు లేని మార్గం (లిఫ్ట్ మాత్రమే)',
         'start_placeholder': 'ప్రారంభ గదిని టైప్ చేయండి లేదా ఎంచుకోండి',
         'end_placeholder': 'గమ్యస్థాన గదిని టైప్ చేయండి లేదా ఎంచుకోండి',
         'select_start_room': 'ప్రారంభ గదిని ఎంచుకోండి',
@@ -2528,7 +2537,9 @@
         }
 
         // 3. Navigate to the route page with selected start/end points (using the Node Keys)
-        window.location.href = `/route?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`;
+        const stepFree = document.getElementById('stepFreeCheck').checked;
+        const modeParam = stepFree ? '&mode=step_free' : '';
+        window.location.href = `/route?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}${modeParam}`;
     });
 
     const scrollWrapper = document.getElementById('roomScrollWrapper');

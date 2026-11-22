@@ -797,10 +797,56 @@ def build_directions(node_path, graph_data):
     steps.append({"type": "arrive", "label": last["label"], "floor": last["floor"]})
     return steps
 
+def build_step_free_graph(graph_data):
+    """Copy of the graph without the staircases between floors.
+
+    Stair nodes are kept (they are also corridor junctions on each floor)
+    and so are lifts, so wheelchair users and anyone avoiding stairs
+    can still reach every floor.
+    """
+    nodes = graph_data["nodes"]
+    adjacency = {}
+    for u, neighbours in graph_data["adjacency"].items():
+        adjacency[u] = {}
+        for v, weight in neighbours.items():
+            u_node, v_node = nodes.get(u), nodes.get(v)
+            is_staircase = (
+                u_node and v_node
+                and u_node["type"] == "stairs"
+                and v_node["type"] == "stairs"
+                and u_node["floor"] != v_node["floor"]
+            )
+            if not is_staircase:
+                adjacency[u][v] = weight
+    return {"nodes": nodes, "adjacency": adjacency}
+
 
 # Initialize the graphs
 make_graph_bidirectional(GRAPH_DATA)
 make_graph_bidirectional(GRAPH_DATA_WITHOUT_LIFT)
+
+GRAPH_DATA_STEP_FREE = build_step_free_graph(GRAPH_DATA)
+
+ROUTE_MODES = ('standard', 'step_free')
+
+
+def get_route_mode():
+    """Read ?mode= from the URL; anything unknown means 'standard'."""
+    mode = request.args.get('mode', 'standard')
+    return mode if mode in ROUTE_MODES else 'standard'
+
+
+def pick_graph(mode):
+    """Choose which graph to use for this user and route mode.
+
+    step_free overrides the role rule: anyone who needs a step-free
+    route may use the lifts, including students.
+    """
+    if mode == 'step_free':
+        return GRAPH_DATA_STEP_FREE
+    if session.get('user_role', 'mlacw_student') == 'mlacw_student':
+        return GRAPH_DATA_WITHOUT_LIFT
+    return GRAPH_DATA
 
 # APPLICATION ROUTES
 @app.route('/portfolio')
@@ -873,10 +919,8 @@ def calculate_route():
     
     # Choose graph data based on user role
     user_role = session.get('user_role', 'mlacw_student')
-    if user_role == 'mlacw_student':
-        graph_data = GRAPH_DATA_WITHOUT_LIFT
-    else:
-        graph_data = GRAPH_DATA
+    mode = get_route_mode()
+    graph_data = pick_graph(mode)
     
     # Validate that nodes exist in the graph
     if start_node not in graph_data["nodes"]:
@@ -913,6 +957,7 @@ def calculate_route():
             "start_label": graph_data["nodes"][start_node]["label"],
             "end_label": graph_data["nodes"][end_node]["label"],
             "user_role": user_role,
+            "mode": mode,
             "directions": build_directions(result["path"], graph_data)
         }
         
@@ -923,11 +968,7 @@ def calculate_route():
 
 @app.route('/get-graph-data')
 def get_graph_data():
-    user_role = session.get('user_role', 'mlacw_student')
-    if user_role == 'mlacw_student':
-        return jsonify(GRAPH_DATA_WITHOUT_LIFT)
-    else:
-        return jsonify(GRAPH_DATA)
+    return jsonify(pick_graph(get_route_mode()))
 
 @app.route('/get-path-data')
 def get_path_data():

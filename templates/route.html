@@ -689,6 +689,7 @@
             <div class="route-info" id="routeInfo">
                 <span data-i18n="route_from">Route from</span> <span id="startLabel">Loading...</span> <span data-i18n="route_to">to</span> <span id="endLabel">Loading...</span>
             </div>
+            <div id="modeNote" style="display:none; margin-top:8px; padding:8px 12px; border-radius:8px; background:rgba(46,125,50,0.12); font-size:0.95rem;"></div>
         </div>
 
         <div id="errorContainer" style="display: none;" class="error-message">
@@ -1074,6 +1075,7 @@
       document.getElementById('currentLanguage').textContent = routeTranslations[lang].app_title.split('-')[0];
       applyRouteTranslations(lang);
       renderDirections();
+      renderRouteModeNote();
       saveLanguagePreference(lang);
       
       // Send language preference to server
@@ -1467,6 +1469,7 @@
     const urlParams = new URLSearchParams(window.location.search);
     const startNode = urlParams.get('start');
     const endNode = urlParams.get('end');
+    const routeMode = urlParams.get('mode') === 'step_free' ? 'step_free' : 'standard';
 
     console.log('URL Parameters:', { start: startNode, end: endNode });
 
@@ -1504,7 +1507,7 @@
         try {
             console.log('Calculating route from:', startNode, 'to:', endNode);
             
-            const url = `/calculate-route?start=${encodeURIComponent(startNode)}&end=${encodeURIComponent(endNode)}`;
+            const url = `/calculate-route?start=${encodeURIComponent(startNode)}&end=${encodeURIComponent(endNode)}&mode=${routeMode}`;
             console.log('Fetching from URL:', url);
             
             const response = await fetch(url);
@@ -1535,6 +1538,7 @@
             // Display directions
             window.currentDirections = data.directions || [];
             renderDirections();
+            renderRouteModeNote();
 
             // Update map with the floor-segmented paths
             if (data.floor_segmented_paths) {
@@ -1552,6 +1556,49 @@
         }
     }
 
+        // ---- Step-free route note ----
+    const stepFreeTexts = {
+      en: {
+        badge: 'Step-free route (lifts only, no stairs)',
+        none: 'No step-free route is available to this destination.'
+      },
+      hi: {
+        badge: 'सीढ़ी-रहित मार्ग (केवल लिफ्ट, सीढ़ियाँ नहीं)',
+        none: 'इस गंतव्य तक सीढ़ी-रहित मार्ग उपलब्ध नहीं है।'
+      },
+      kn: {
+        badge: 'ಮೆಟ್ಟಿಲು ರಹಿತ ಮಾರ್ಗ (ಲಿಫ್ಟ್ ಮಾತ್ರ, ಮೆಟ್ಟಿಲುಗಳಿಲ್ಲ)',
+        none: 'ಈ ಗಮ್ಯಸ್ಥಾನಕ್ಕೆ ಮೆಟ್ಟಿಲು ರಹಿತ ಮಾರ್ಗ ಲಭ್ಯವಿಲ್ಲ.'
+      },
+      ta: {
+        badge: 'படிக்கட்டு இல்லாத பாதை (லிஃப்ட் மட்டும்)',
+        none: 'இந்த இடத்திற்கு படிக்கட்டு இல்லாத பாதை இல்லை.'
+      },
+      te: {
+        badge: 'మెట్లు లేని మార్గం (లిఫ్ట్ మాత్రమే)',
+        none: 'ఈ గమ్యస్థానానికి మెట్లు లేని మార్గం అందుబాటులో లేదు.'
+      }
+    };
+
+    function renderRouteModeNote() {
+      const note = document.getElementById('modeNote');
+      if (!note) return;
+
+      if (routeMode !== 'step_free') {
+        note.style.display = 'none';
+        return;
+      }
+
+      const texts = stepFreeTexts[currentLanguage] || stepFreeTexts.en;
+      let message = texts.badge;
+      const steps = window.currentDirections;
+      if (steps && steps.length === 0) {
+        message += ' — ' + texts.none;
+      }
+      note.textContent = message;
+      note.style.display = 'block';
+    }
+    
     // ---- Turn-by-turn directions ----
     const directionTexts = {
       en: {
@@ -1762,7 +1809,7 @@
             setTimeout(startTour, 1000);
 
             // Fetch graph data from the backend
-            const graphResponse = await fetch('/get-graph-data');
+            const graphResponse = await fetch(`/get-graph-data?mode=${routeMode}`)
             if (!graphResponse.ok) {
                 throw new Error('Failed to load graph data');
             }
